@@ -1,10 +1,10 @@
 # CMD+RVL
 
-**Was this decision justified given what was actually available at the time?**
+**Verifiable data. Deterministic answers. Tamper-evident proof.**
 
-CMD+RVL exists to make decisions made under uncertainty inspectable, defensible, and survivable over time. Data will commoditize. Models will commoditize. What remains scarce is accountability over time.
+Data will commoditize. Models will commoditize. What remains scarce is knowing where every number came from — and being able to prove it. CMD+RVL builds open-source tools that verify, explain, and lock data artifacts so every conclusion traces back to source.
 
-We build open-source, deterministic CLI tools that establish what can be known, compared, and trusted about data artifacts. Same bytes in, same answer out, every time. When a confident answer isn't possible, the tool refuses and tells you exactly what to fix.
+Same bytes in, same answer out, every time. When a confident answer isn't possible, the tool refuses and tells you exactly what to fix.
 
 ---
 
@@ -14,10 +14,15 @@ Composable Rust CLIs. Each tool does one thing and emits structured JSON. Agents
 
 ### Shipped
 
-| Tool | What it does |
-|------|-------------|
-| **[rvl](https://github.com/cmdrvl/rvl)** | Reveals the smallest set of numeric changes that explain what actually changed between two datasets |
-| **[shape](https://github.com/cmdrvl/shape)** | Structural comparability gate — can these two datasets be compared at all? |
+| Tool | What it does | Install |
+|------|-------------|---------|
+| **[rvl](https://github.com/cmdrvl/rvl)** | Reveals the smallest set of numeric changes that explain what actually changed between two datasets | `brew install cmdrvl/tap/rvl` |
+| **[shape](https://github.com/cmdrvl/shape)** | Structural comparability gate — can these two datasets be compared at all? | `brew install cmdrvl/tap/shape` |
+| **[lock](https://github.com/cmdrvl/lock)** | Dataset lockfiles — like Cargo.lock for data. Self-hashed, tamper-evident, with `lock verify` for integrity checks | `brew install cmdrvl/tap/lock` |
+
+All three tools record to a shared append-only witness ledger (`~/.epistemic/witness.jsonl`) — every invocation is content-addressed, hash-chained, and auditable.
+
+**Typical pipeline:** `shape` (are these comparable?) → `rvl` (what changed?) → `lock` (pin the evidence)
 
 ### In Development
 
@@ -27,7 +32,6 @@ Composable Rust CLIs. Each tool does one thing and emits structured JSON. Agents
 | **[hash](https://github.com/cmdrvl/hash)** | Exact byte identity (SHA256 / BLAKE3) for dedup and immutability |
 | **[fingerprint](https://github.com/cmdrvl/fingerprint)** | Template recognition — tests artifacts against versioned assertions |
 | **[profile](https://github.com/cmdrvl/profile)** | Column-scoping configs for report tools |
-| **[lock](https://github.com/cmdrvl/lock)** | Dataset lockfiles — like Cargo.lock for data |
 | **[verify](https://github.com/cmdrvl/verify)** | Invariant checks against declared rules (PASS / FAIL) |
 | **[compare](https://github.com/cmdrvl/compare)** | Exhaustive cell-by-cell diff without materiality compression |
 | **[canon](https://github.com/cmdrvl/canon)** | Deterministic entity resolution against versioned registries |
@@ -54,6 +58,7 @@ Composable Rust CLIs. Each tool does one thing and emits structured JSON. Agents
 ```bash
 brew install cmdrvl/tap/rvl
 brew install cmdrvl/tap/shape
+brew install cmdrvl/tap/lock
 ```
 
 ## Links
