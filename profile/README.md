@@ -16,21 +16,21 @@ Composable Rust CLIs. Each tool does one thing and emits structured JSON. Agents
 
 | Tool | What it does | Install |
 |------|-------------|---------|
+| **[vacuum](https://github.com/cmdrvl/vacuum)** | Enumerates artifacts in scope, emits a deterministic sorted JSONL manifest with size, mtime, and MIME type | `brew install cmdrvl/tap/vacuum` |
+| **[hash](https://github.com/cmdrvl/hash)** | Streaming content hashing — adds SHA-256 or BLAKE3 byte identity to every artifact in a manifest | `brew install cmdrvl/tap/hash` |
 | **[rvl](https://github.com/cmdrvl/rvl)** | Reveals the smallest set of numeric changes that explain what actually changed between two datasets | `brew install cmdrvl/tap/rvl` |
 | **[shape](https://github.com/cmdrvl/shape)** | Structural comparability gate — can these two datasets be compared at all? | `brew install cmdrvl/tap/shape` |
 | **[lock](https://github.com/cmdrvl/lock)** | Dataset lockfiles — like Cargo.lock for data. Self-hashed, tamper-evident, with `lock verify` for integrity checks | `brew install cmdrvl/tap/lock` |
 | **[pack](https://github.com/cmdrvl/pack)** | Evidence sealing — bundles lockfiles, reports, and tool outputs into one immutable, content-addressed evidence pack | `brew install cmdrvl/tap/pack` |
 
-All four tools record to a shared append-only witness ledger (`~/.epistemic/witness.jsonl`) — every invocation is content-addressed, hash-chained, and auditable.
+All six tools record to a shared append-only witness ledger (`~/.epistemic/witness.jsonl`) — every invocation is content-addressed, hash-chained, and auditable.
 
-**Typical pipeline:** `shape` (are these comparable?) → `rvl` (what changed?) → `lock` (pin the inputs) → `pack` (seal the evidence)
+**Typical pipeline:** `vacuum` (what's there?) → `hash` (prove identity) → `shape` (are these comparable?) → `rvl` (what changed?) → `lock` (pin the inputs) → `pack` (seal the evidence)
 
 ### In Development
 
 | Tool | What it does |
 |------|-------------|
-| **[vacuum](https://github.com/cmdrvl/vacuum)** | Enumerates artifacts in scope, emits a stable JSONL manifest |
-| **[hash](https://github.com/cmdrvl/hash)** | Exact byte identity (SHA256 / BLAKE3) for dedup and immutability |
 | **[fingerprint](https://github.com/cmdrvl/fingerprint)** | Template recognition — tests artifacts against versioned assertions |
 | **[profile](https://github.com/cmdrvl/profile)** | Column-scoping configs for report tools |
 | **[verify](https://github.com/cmdrvl/verify)** | Invariant checks against declared rules (PASS / FAIL) |
@@ -56,6 +56,8 @@ All four tools record to a shared append-only witness ledger (`~/.epistemic/witn
 ## Install
 
 ```bash
+brew install cmdrvl/tap/vacuum
+brew install cmdrvl/tap/hash
 brew install cmdrvl/tap/rvl
 brew install cmdrvl/tap/shape
 brew install cmdrvl/tap/lock
