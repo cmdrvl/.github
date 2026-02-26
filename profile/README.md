@@ -19,10 +19,11 @@ Composable Rust CLIs. Each tool does one thing and emits structured JSON. Agents
 | **[rvl](https://github.com/cmdrvl/rvl)** | Reveals the smallest set of numeric changes that explain what actually changed between two datasets | `brew install cmdrvl/tap/rvl` |
 | **[shape](https://github.com/cmdrvl/shape)** | Structural comparability gate — can these two datasets be compared at all? | `brew install cmdrvl/tap/shape` |
 | **[lock](https://github.com/cmdrvl/lock)** | Dataset lockfiles — like Cargo.lock for data. Self-hashed, tamper-evident, with `lock verify` for integrity checks | `brew install cmdrvl/tap/lock` |
+| **[pack](https://github.com/cmdrvl/pack)** | Evidence sealing — bundles lockfiles, reports, and tool outputs into one immutable, content-addressed evidence pack | `brew install cmdrvl/tap/pack` |
 
-All three tools record to a shared append-only witness ledger (`~/.epistemic/witness.jsonl`) — every invocation is content-addressed, hash-chained, and auditable.
+All four tools record to a shared append-only witness ledger (`~/.epistemic/witness.jsonl`) — every invocation is content-addressed, hash-chained, and auditable.
 
-**Typical pipeline:** `shape` (are these comparable?) → `rvl` (what changed?) → `lock` (pin the evidence)
+**Typical pipeline:** `shape` (are these comparable?) → `rvl` (what changed?) → `lock` (pin the inputs) → `pack` (seal the evidence)
 
 ### In Development
 
@@ -36,7 +37,6 @@ All three tools record to a shared append-only witness ledger (`~/.epistemic/wit
 | **[compare](https://github.com/cmdrvl/compare)** | Exhaustive cell-by-cell diff without materiality compression |
 | **[canon](https://github.com/cmdrvl/canon)** | Deterministic entity resolution against versioned registries |
 | **[assess](https://github.com/cmdrvl/assess)** | Decision framing — PROCEED / ESCALATE / BLOCK against declared policy |
-| **[pack](https://github.com/cmdrvl/pack)** | Evidence sealing — bundles everything into a content-addressed evidence pack |
 
 ### SEC EDGAR & Financial Data
 
@@ -59,6 +59,7 @@ All three tools record to a shared append-only witness ledger (`~/.epistemic/wit
 brew install cmdrvl/tap/rvl
 brew install cmdrvl/tap/shape
 brew install cmdrvl/tap/lock
+brew install cmdrvl/tap/pack
 ```
 
 ## Links
