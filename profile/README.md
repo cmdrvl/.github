@@ -18,24 +18,24 @@ Composable Rust CLIs. Each tool does one thing and emits structured JSON. Agents
 |------|-------------|---------|
 | **[vacuum](https://github.com/cmdrvl/vacuum)** | Enumerates artifacts in scope, emits a deterministic sorted JSONL manifest with size, mtime, and MIME type | `brew install cmdrvl/tap/vacuum` |
 | **[hash](https://github.com/cmdrvl/hash)** | Streaming content hashing — adds SHA-256 or BLAKE3 byte identity to every artifact in a manifest | `brew install cmdrvl/tap/hash` |
-| **[rvl](https://github.com/cmdrvl/rvl)** | Reveals the smallest set of numeric changes that explain what actually changed between two datasets | `brew install cmdrvl/tap/rvl` |
-| **[shape](https://github.com/cmdrvl/shape)** | Structural comparability gate — can these two datasets be compared at all? | `brew install cmdrvl/tap/shape` |
+| **[fingerprint](https://github.com/cmdrvl/fingerprint)** | Template recognition — tests artifacts against versioned assertion-based definitions and produces content hashes | `brew install cmdrvl/tap/fingerprint` |
+| **[profile](https://github.com/cmdrvl/profile)** | Column-scoping configs for report tools — draft/freeze lifecycle, deterministic key suggestion, schema linting | `brew install cmdrvl/tap/profile` |
 | **[lock](https://github.com/cmdrvl/lock)** | Dataset lockfiles — like Cargo.lock for data. Self-hashed, tamper-evident, with `lock verify` for integrity checks | `brew install cmdrvl/tap/lock` |
+| **[shape](https://github.com/cmdrvl/shape)** | Structural comparability gate — can these two datasets be compared at all? | `brew install cmdrvl/tap/shape` |
+| **[rvl](https://github.com/cmdrvl/rvl)** | Reveals the smallest set of numeric changes that explain what actually changed between two datasets | `brew install cmdrvl/tap/rvl` |
+| **[canon](https://github.com/cmdrvl/canon)** | Deterministic entity resolution — resolves identifiers against versioned registries with full audit trail | `brew install cmdrvl/tap/canon` |
 | **[pack](https://github.com/cmdrvl/pack)** | Evidence sealing — bundles lockfiles, reports, and tool outputs into one immutable, content-addressed evidence pack | `brew install cmdrvl/tap/pack` |
 
-All six tools record to a shared append-only witness ledger (`~/.epistemic/witness.jsonl`) — every invocation is content-addressed, hash-chained, and auditable.
+All nine tools record to a shared append-only witness ledger (`~/.epistemic/witness.jsonl`) — every invocation is content-addressed, hash-chained, and auditable.
 
-**Typical pipeline:** `vacuum` (what's there?) → `hash` (prove identity) → `shape` (are these comparable?) → `rvl` (what changed?) → `lock` (pin the inputs) → `pack` (seal the evidence)
+**Typical pipeline:** `vacuum` (what's there?) → `hash` (prove identity) → `fingerprint` (recognize templates) → `lock` (pin inputs) → `shape` (are these comparable?) → `rvl` (what changed?) → `pack` (seal the evidence)
 
 ### In Development
 
 | Tool | What it does |
 |------|-------------|
-| **[fingerprint](https://github.com/cmdrvl/fingerprint)** | Template recognition — tests artifacts against versioned assertions |
-| **[profile](https://github.com/cmdrvl/profile)** | Column-scoping configs for report tools |
 | **[verify](https://github.com/cmdrvl/verify)** | Invariant checks against declared rules (PASS / FAIL) |
 | **[compare](https://github.com/cmdrvl/compare)** | Exhaustive cell-by-cell diff without materiality compression |
-| **[canon](https://github.com/cmdrvl/canon)** | Deterministic entity resolution against versioned registries |
 | **[assess](https://github.com/cmdrvl/assess)** | Decision framing — PROCEED / ESCALATE / BLOCK against declared policy |
 
 ### SEC EDGAR & Financial Data
@@ -58,9 +58,12 @@ All six tools record to a shared append-only witness ledger (`~/.epistemic/witne
 ```bash
 brew install cmdrvl/tap/vacuum
 brew install cmdrvl/tap/hash
-brew install cmdrvl/tap/rvl
-brew install cmdrvl/tap/shape
+brew install cmdrvl/tap/fingerprint
+brew install cmdrvl/tap/profile
 brew install cmdrvl/tap/lock
+brew install cmdrvl/tap/shape
+brew install cmdrvl/tap/rvl
+brew install cmdrvl/tap/canon
 brew install cmdrvl/tap/pack
 ```
 
