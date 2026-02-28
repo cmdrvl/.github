@@ -53,6 +53,15 @@ All nine tools record to a shared append-only witness ledger (`~/.epistemic/witn
 | **[regret](https://github.com/cmdrvl/regret)** | Mines git history for high-precision regret signals — reverts, linked fixes, patch-id matches |
 | **[twinning](https://github.com/cmdrvl/twinning)** | In-memory database twin that speaks the real wire protocol — fast testing without a real database |
 
+## Agent Integration
+
+These tools are built for agent orchestration. Two reference prompts help agents learn the full toolchain:
+
+- **[Agent Operator Guide](./AGENT_PROMPT.md)** — workflows, refusal recovery, schema discovery, and the full tool map
+- **[System Prompt](./SPINE_SYSTEM_PROMPT.md)** — compact drop-in for agent context windows (~30 lines)
+
+Every shipped tool also supports `<tool> --describe` for per-tool machine-readable self-discovery.
+
 ## Install
 
 ```bash
