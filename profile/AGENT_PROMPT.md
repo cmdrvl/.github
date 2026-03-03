@@ -18,7 +18,7 @@ vacuum → hash → fingerprint → lock
 |------|-------------|-----------|
 | **vacuum** | Scans directories, emits sorted JSONL manifest (path, size, mtime, mime) | `vacuum <DIR>...` `--include` `--exclude` |
 | **hash** | Adds SHA-256 or BLAKE3 byte identity to each record | `--algorithm blake3` |
-| **fingerprint** | Tests each artifact against template definitions, produces content hashes | `--fp <ID>` (repeatable, first match wins) `--list` `--diagnose` |
+| **fingerprint** | Tests each artifact against template definitions, produces content hashes | `--fp <ID>` (repeatable, first match wins) `--list` `--diagnose`. YAML definitions in `~/.fingerprint/definitions/` run directly without compilation (override with `FINGERPRINT_DEFINITIONS`). |
 | **lock** | Pins the stream into a self-hashed, tamper-evident lockfile | `--dataset-id` `--as-of` `--note` |
 
 Stream tools read JSONL from stdin, enrich each record, emit to stdout. Pipe them:
@@ -129,6 +129,24 @@ Each record now has `fingerprint.matched`, `fingerprint.assertions`, and `finger
 ```bash
 jq 'select(.fingerprint.matched == true)' fp.jsonl    # Recognized
 jq 'select(.fingerprint.matched == false)' fp.jsonl   # Unknown
+```
+
+### 2b. Author and test a custom fingerprint (no compilation required)
+
+```bash
+# Learn a fingerprint from example files
+fingerprint infer ./cbre-appraisals/ --format markdown --id cbre-appraisal.v1 --out cbre.fp.yaml
+
+# Install the YAML definition for direct runtime evaluation
+mkdir -p ~/.fingerprint/definitions
+cp cbre.fp.yaml ~/.fingerprint/definitions/
+
+# Test it immediately — no compile step needed
+vacuum /dataroom/ | hash | fingerprint --fp cbre-appraisal.v1 --diagnose
+
+# Iterate: edit the YAML, re-copy, re-test
+# When stable, compile for production performance:
+fingerprint compile cbre.fp.yaml --out fingerprint-cbre-v1/
 ```
 
 ### 3. Compare two datasets and explain changes
