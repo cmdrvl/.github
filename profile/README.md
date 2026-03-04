@@ -1,16 +1,29 @@
 # CMD+RVL
 
-**Verifiable data. Deterministic answers. Tamper-evident proof.**
+**The epistemic spine — an open protocol for provable data.**
 
-Data will commoditize. Models will commoditize. What remains scarce is knowing where every number came from — and being able to prove it. CMD+RVL builds open-source tools that verify, explain, and lock data artifacts so every conclusion traces back to source.
+Anything that emits `version`/`outcome`/`refusal` in the right shape, appends to a hash-chained witness ledger, and supports `--describe` for self-discovery is a spine tool. In any language. The Rust tools below are the reference implementation.
 
 Same bytes in, same answer out, every time. When a confident answer isn't possible, the tool refuses and tells you exactly what to fix.
 
 ---
 
-## Tools
+## The Protocol
 
-Composable Rust CLIs. Each tool does one thing and emits structured JSON. Agents decide what to run — these tools decide what is true.
+A spine-compatible tool follows four rules:
+
+1. **Structured output** — emits JSON with a `version` field (e.g., `rvl.v0`), an `outcome` (domain result), and a `refusal` (when it can't operate)
+2. **Self-description** — `--describe` emits a machine-readable operator manifest; `--schema` emits the output JSON Schema
+3. **Witness** — appends a content-addressed, hash-chained record to `~/.epistemic/witness.jsonl` on every invocation
+4. **Determinism** — same inputs, same output, every time. No randomness, no side effects, no network calls in the truth path
+
+Tools that follow the protocol compose automatically: `assess` scores any tool's output via policy rules. `pack` seals any tool's output into tamper-evident evidence. The witness ledger records any tool's invocation. No central coordinator — the protocol is the coordinator.
+
+---
+
+## Reference Implementation
+
+Composable Rust CLIs. Each tool does one thing. Agents decide what to run — these tools decide what is true.
 
 ### Shipped
 
@@ -26,7 +39,7 @@ Composable Rust CLIs. Each tool does one thing and emits structured JSON. Agents
 | **[canon](https://github.com/cmdrvl/canon)** | Deterministic entity resolution — resolves identifiers against versioned registries with full audit trail | `brew install cmdrvl/tap/canon` |
 | **[pack](https://github.com/cmdrvl/pack)** | Evidence sealing — bundles lockfiles, reports, and tool outputs into one immutable, content-addressed evidence pack | `brew install cmdrvl/tap/pack` |
 
-All nine tools record to a shared append-only witness ledger (`~/.epistemic/witness.jsonl`) — every invocation is content-addressed, hash-chained, and auditable.
+All nine tools record to the witness ledger — every invocation is content-addressed, hash-chained, and auditable.
 
 **Typical pipeline:** `vacuum` (what's there?) → `hash` (prove identity) → `fingerprint` (recognize templates) → `lock` (pin inputs) → `shape` (are these comparable?) → `rvl` (what changed?) → `pack` (seal the evidence)
 
@@ -34,7 +47,8 @@ All nine tools record to a shared append-only witness ledger (`~/.epistemic/witn
 
 | Tool | What it does |
 |------|-------------|
-| **[verify](https://github.com/cmdrvl/verify)** | Invariant checks against declared rules (PASS / FAIL) |
+| **[verify](https://github.com/cmdrvl/verify)** | Invariant checks — single-artifact rules (JSON) and cross-artifact constraints (SQL via DuckDB) |
+| **[benchmark](https://github.com/cmdrvl/benchmark)** | Extraction accuracy scoring — checks (entity, field, value) assertions against candidate datasets |
 | **[compare](https://github.com/cmdrvl/compare)** | Exhaustive cell-by-cell diff without materiality compression |
 | **[assess](https://github.com/cmdrvl/assess)** | Decision framing — PROCEED / ESCALATE / BLOCK against declared policy |
 
@@ -55,12 +69,12 @@ All nine tools record to a shared append-only witness ledger (`~/.epistemic/witn
 
 ## Agent Integration
 
-These tools are built for agent orchestration. Two reference prompts help agents learn the full toolchain:
+These tools are built for agent orchestration. Two reference prompts help agents learn the protocol:
 
 - **[Agent Operator Guide](./AGENT_PROMPT.md)** — workflows, refusal recovery, schema discovery, and the full tool map
 - **[System Prompt](./SPINE_SYSTEM_PROMPT.md)** — compact drop-in for agent context windows (~30 lines)
 
-Every shipped tool also supports `<tool> --describe` for per-tool machine-readable self-discovery.
+Every shipped tool supports `<tool> --describe` for machine-readable self-discovery and `<tool> --schema` for runtime JSON Schema output.
 
 ## Install
 
