@@ -1,20 +1,35 @@
 # CMD+RVL
 
-**The epistemic spine — an open protocol for provable data.**
+**Infrastructure for proving what changed in financial data.**
 
-Anything that emits `version`/`outcome`/`refusal` in the right shape, appends to a hash-chained witness ledger, and supports `--describe` for self-discovery is a spine tool. In any language. The Rust tools below are the reference implementation.
+CMD+RVL builds deterministic tooling, event pipelines, and intelligence layers so that every data change is traceable, every conclusion is reproducible, and every gap is surfaced — not buried.
 
-Same bytes in, same answer out, every time. When a confident answer isn't possible, the tool refuses and tells you exactly what to fix.
+The open-source CLI tools below are the protocol layer: composable, deterministic Rust binaries that anyone can run. Same bytes in, same answer out, every time. When a confident answer isn't possible, the tool refuses and tells you exactly what to fix.
+
+### Quick start — what changed between two quarterly reports?
+
+```bash
+# What's in each quarterly report?
+vacuum q3/ q4/ | hash | lock save --name quarterly
+
+# What actually changed?
+rvl q3/positions.csv q4/positions.csv
+# → 3 of 847 rows changed, net +$2.1M notional, 1 new position
+
+# Seal the evidence
+pack create --lock quarterly.lock --include q3/ q4/
+# → pack-a7f3b2.pack (content-addressed, tamper-evident)
+```
 
 ---
 
-## The Protocol
+## How the tools work
 
-A spine-compatible tool follows four rules:
+Every CMD+RVL tool follows four rules:
 
 1. **Structured output** — emits JSON with a `version` field (e.g., `rvl.v0`), an `outcome` (domain result), and a `refusal` (when it can't operate)
 2. **Self-description** — `--describe` emits a machine-readable operator manifest; `--schema` emits the output JSON Schema
-3. **Witness** — appends a content-addressed, hash-chained record to `~/.epistemic/witness.jsonl` on every invocation
+3. **Witness** — appends a content-addressed, hash-chained record to `~/.cmdrvl/witness.jsonl` on every invocation
 4. **Determinism** — same inputs, same output, every time. No randomness, no side effects, no network calls in the truth path
 
 Tools that follow the protocol compose automatically: `assess` scores any tool's output via policy rules. `pack` seals any tool's output into tamper-evident evidence. The witness ledger records any tool's invocation. No central coordinator — the protocol is the coordinator.
@@ -72,7 +87,7 @@ All nine tools record to the witness ledger — every invocation is content-addr
 These tools are built for agent orchestration. Two reference prompts help agents learn the protocol:
 
 - **[Agent Operator Guide](./AGENT_PROMPT.md)** — workflows, refusal recovery, schema discovery, and the full tool map
-- **[System Prompt](./SPINE_SYSTEM_PROMPT.md)** — compact drop-in for agent context windows (~30 lines)
+- **[System Prompt](./SYSTEM_PROMPT.md)** — compact drop-in for agent context windows (~30 lines)
 
 Every shipped tool supports `<tool> --describe` for machine-readable self-discovery and `<tool> --schema` for runtime JSON Schema output.
 
