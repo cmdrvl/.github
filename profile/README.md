@@ -29,10 +29,10 @@ Every CMD+RVL tool follows four rules:
 
 1. **Structured output** — emits JSON with a `version` field (e.g., `rvl.v0`), an `outcome` (domain result), and a `refusal` (when it can't operate)
 2. **Self-description** — `--describe` emits a machine-readable operator manifest; `--schema` emits the output JSON Schema
-3. **Witness** — appends a content-addressed, hash-chained record to `~/.cmdrvl/witness.jsonl` on every invocation
+3. **Witness** — appends a local receipt record to `~/.cmdrvl/witness.jsonl` on every invocation
 4. **Determinism** — same inputs, same output, every time. No randomness, no side effects, no network calls in the truth path
 
-Tools that follow the protocol compose automatically: `assess` scores any tool's output via policy rules. `pack` seals any tool's output into tamper-evident evidence. The witness ledger records any tool's invocation. No central coordinator — the protocol is the coordinator.
+Tools that follow the protocol compose automatically: `assess` scores any tool's output via policy rules. `pack` seals any tool's output into tamper-evident evidence. The witness log records local tool invocation context. No central coordinator — the protocol is the coordinator.
 
 ---
 
@@ -51,21 +51,21 @@ Composable Rust CLIs. Each tool does one thing. Agents decide what to run — th
 | **[lock](https://github.com/cmdrvl/lock)** | Dataset lockfiles — like Cargo.lock for data. Self-hashed, tamper-evident, with `lock verify` for integrity checks | `brew install cmdrvl/tap/lock` |
 | **[shape](https://github.com/cmdrvl/shape)** | Structural comparability gate — can these two datasets be compared at all? | `brew install cmdrvl/tap/shape` |
 | **[rvl](https://github.com/cmdrvl/rvl)** | Reveals the smallest set of numeric changes that explain what actually changed between two datasets | `brew install cmdrvl/tap/rvl` |
+| **[verify](https://github.com/cmdrvl/verify)** | Constraint evaluation — deterministic portable and DuckDB-backed checks over bound artifacts and relations | `cargo build --release -p verify-cli` |
+| **[benchmark](https://github.com/cmdrvl/benchmark)** | Gold-set scoring — checks (entity, field, value) assertions against candidate datasets and emits deterministic policy-facing quality bands | `brew install cmdrvl/tap/cmdrvl-benchmark` |
+| **[assess](https://github.com/cmdrvl/assess)** | Decision framing — deterministic PROCEED / ESCALATE / BLOCK classification over a spine evidence bundle | `brew install cmdrvl/tap/assess` |
 | **[canon](https://github.com/cmdrvl/canon)** | Deterministic entity resolution — resolves identifiers against versioned registries with full audit trail | `brew install cmdrvl/tap/canon` |
 | **[pack](https://github.com/cmdrvl/pack)** | Evidence sealing — bundles lockfiles, reports, and tool outputs into one immutable, content-addressed evidence pack | `brew install cmdrvl/tap/pack` |
 
-All nine tools record to the witness ledger — every invocation is content-addressed, hash-chained, and auditable.
+All twelve tools record to the local witness log, and the evidence-producing tools compose cleanly into lock and pack artifacts.
 
-**Typical pipeline:** `vacuum` (what's there?) → `hash` (prove identity) → `fingerprint` (recognize templates) → `lock` (pin inputs) → `shape` (are these comparable?) → `rvl` (what changed?) → `pack` (seal the evidence)
+**Typical pipeline:** `vacuum` (what's there?) → `hash` (prove identity) → `fingerprint` (recognize templates) → `lock` (pin inputs) → `shape` (are these comparable?) → `rvl` / `verify` / `benchmark` (analyze) → `assess` (classify) → `pack` (seal the evidence)
 
 ### In Development
 
 | Tool | What it does |
 |------|-------------|
-| **[verify](https://github.com/cmdrvl/verify)** | Invariant checks — single-artifact rules (JSON) and cross-artifact constraints (SQL via DuckDB) |
-| **[benchmark](https://github.com/cmdrvl/benchmark)** | Extraction accuracy scoring — checks (entity, field, value) assertions against candidate datasets |
 | **[compare](https://github.com/cmdrvl/compare)** | Exhaustive cell-by-cell diff without materiality compression |
-| **[assess](https://github.com/cmdrvl/assess)** | Decision framing — PROCEED / ESCALATE / BLOCK against declared policy |
 
 ### SEC EDGAR & Financial Data
 
@@ -101,8 +101,19 @@ brew install cmdrvl/tap/profile
 brew install cmdrvl/tap/lock
 brew install cmdrvl/tap/shape
 brew install cmdrvl/tap/rvl
+brew install cmdrvl/tap/cmdrvl-benchmark
+brew install cmdrvl/tap/assess
 brew install cmdrvl/tap/canon
 brew install cmdrvl/tap/pack
+```
+
+`verify` is source-buildable today:
+
+```bash
+git clone git@github.com:cmdrvl/verify.git
+cd verify
+cargo build --release -p verify-cli
+./target/release/verify --help
 ```
 
 ## Links
