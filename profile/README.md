@@ -51,7 +51,7 @@ Composable Rust CLIs. Each tool does one thing. Agents decide what to run — th
 | **[lock](https://github.com/cmdrvl/lock)** | Dataset lockfiles — like Cargo.lock for data. Self-hashed, tamper-evident, with `lock verify` for integrity checks | `brew install cmdrvl/tap/lock` |
 | **[shape](https://github.com/cmdrvl/shape)** | Structural comparability gate — can these two datasets be compared at all? | `brew install cmdrvl/tap/shape` |
 | **[rvl](https://github.com/cmdrvl/rvl)** | Reveals the smallest set of numeric changes that explain what actually changed between two datasets | `brew install cmdrvl/tap/rvl` |
-| **[verify](https://github.com/cmdrvl/verify)** | Constraint evaluation — deterministic portable and DuckDB-backed checks over bound artifacts and relations | `cargo build --release -p verify-cli` |
+| **[verify](https://github.com/cmdrvl/verify)** | Constraint evaluation — deterministic portable and DuckDB-backed checks over bound artifacts and relations | `brew install cmdrvl/tap/verify` |
 | **[benchmark](https://github.com/cmdrvl/benchmark)** | Gold-set scoring — checks (entity, field, value) assertions against candidate datasets and emits deterministic policy-facing quality bands | `brew install cmdrvl/tap/cmdrvl-benchmark` |
 | **[assess](https://github.com/cmdrvl/assess)** | Decision framing — deterministic PROCEED / ESCALATE / BLOCK classification over a spine evidence bundle | `brew install cmdrvl/tap/assess` |
 | **[canon](https://github.com/cmdrvl/canon)** | Deterministic entity resolution — resolves identifiers against versioned registries with full audit trail | `brew install cmdrvl/tap/canon` |
@@ -101,19 +101,11 @@ brew install cmdrvl/tap/profile
 brew install cmdrvl/tap/lock
 brew install cmdrvl/tap/shape
 brew install cmdrvl/tap/rvl
+brew install cmdrvl/tap/verify
 brew install cmdrvl/tap/cmdrvl-benchmark
 brew install cmdrvl/tap/assess
 brew install cmdrvl/tap/canon
 brew install cmdrvl/tap/pack
-```
-
-`verify` is source-buildable today:
-
-```bash
-git clone git@github.com:cmdrvl/verify.git
-cd verify
-cargo build --release -p verify-cli
-./target/release/verify --help
 ```
 
 ## Links
