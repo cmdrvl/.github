@@ -12,6 +12,44 @@ CMD+RVL is a set of small deterministic CLIs for questions like:
 
 These tools are designed for agent workflows, but they are also useful directly from the terminal. Same inputs, same answer. If the answer would be untrustworthy, the tool refuses and tells you what is missing.
 
+### What this feels like with an agent
+
+Without tools, an agent often says:
+
+- "I think these files are probably comparable."
+- "It looks like only a few things changed."
+- "This output seems mostly fine."
+
+With CMD+RVL, the same workflow becomes:
+
+- `shape` says whether the files are actually comparable
+- `rvl` says exactly what materially changed
+- `verify` says whether declared rules passed or failed
+- `benchmark` says how good the result is against ground truth
+- `assess` says whether to proceed, escalate, or block
+
+Two concrete examples:
+
+**Example 1: quarterly holdings review**
+
+An agent receives two CSVs and a question: "Did anything important change?"
+
+- `shape` confirms the files are comparable
+- `rvl` reports that only 3 of 847 rows changed, with one new position and a net notional increase
+- `pack` can seal that evidence so the result can be reviewed or shared later
+
+Instead of a vague summary, you get a small, checkable evidence trail.
+
+**Example 2: extraction quality check**
+
+An agent produces a candidate dataset from filings and needs to know whether it is safe to use.
+
+- `verify` checks declared constraints like missing IDs, duplicates, and broken references
+- `benchmark` checks the candidate against a gold set and emits quality signals
+- `assess` turns that bundle into a deterministic decision
+
+Instead of "looks good to me," you get an explicit PASS / FAIL / quality / decision chain.
+
 ### Start Here
 
 Most first-time users do not need the full stack. They usually start with these:
