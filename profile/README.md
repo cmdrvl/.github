@@ -1,71 +1,95 @@
 # CMD+RVL
 
-**Infrastructure for proving what changed in financial data.**
+**Tools that help agents answer hard data questions without hand-waving.**
 
-CMD+RVL builds deterministic tooling, event pipelines, and intelligence layers so that every data change is traceable, every conclusion is reproducible, and every gap is surfaced — not buried.
+CMD+RVL is a set of small deterministic CLIs for questions like:
 
-The open-source CLI tools below are the protocol layer: composable, deterministic Rust binaries that anyone can run. Same bytes in, same answer out, every time. When a confident answer isn't possible, the tool refuses and tells you exactly what to fix.
+- What changed?
+- Are these two datasets even comparable?
+- Did this output violate a rule?
+- How good is this result against a gold set?
+- Should we proceed, escalate, or block?
 
-### Quick start — what changed between two quarterly reports?
+These tools are designed for agent workflows, but they are also useful directly from the terminal. Same inputs, same answer. If the answer would be untrustworthy, the tool refuses and tells you what is missing.
+
+### Start Here
+
+Most first-time users do not need the full stack. They usually start with these:
+
+| Question | Tool | What it gives you |
+|------|------|-------------------|
+| Can these two files be compared at all? | **[shape](https://github.com/cmdrvl/shape)** | A clear compatibility verdict before you diff anything |
+| What materially changed? | **[rvl](https://github.com/cmdrvl/rvl)** | The smallest numeric delta set that explains the change |
+| Did the output break declared rules? | **[verify](https://github.com/cmdrvl/verify)** | Deterministic PASS / FAIL over portable constraints |
+| How good is this result versus ground truth? | **[benchmark](https://github.com/cmdrvl/benchmark)** | Accuracy, coverage, and policy-facing quality signals |
+| What should we do with this evidence? | **[assess](https://github.com/cmdrvl/assess)** | Deterministic PROCEED / ESCALATE / BLOCK decisions |
+
+### Quick start
+
+What changed between two quarterly reports?
 
 ```bash
-# What's in each quarterly report?
-vacuum q3/ q4/ | hash | lock save --name quarterly
+# Step 1: ask whether they are comparable
+shape q3/positions.csv q4/positions.csv
 
-# What actually changed?
+# Step 2: ask what materially changed
+#
+# Example output:
+# 3 of 847 rows changed
+# net +$2.1M notional
+# 1 new position
 rvl q3/positions.csv q4/positions.csv
-# → 3 of 847 rows changed, net +$2.1M notional, 1 new position
 
-# Seal the evidence
+# Step 3: lock and seal the evidence if it matters
+vacuum q3/ q4/ | hash | lock save --name quarterly
 pack create --lock quarterly.lock --include q3/ q4/
-# → pack-a7f3b2.pack (content-addressed, tamper-evident)
 ```
 
 ---
 
-## How the tools work
+## Why agents like this
 
-Every CMD+RVL tool follows four rules:
+Every shipped CMD+RVL tool follows the same behavioral rules:
 
-1. **Structured output** — emits JSON with a `version` field (e.g., `rvl.v0`), an `outcome` (domain result), and a `refusal` (when it can't operate)
-2. **Self-description** — `--describe` emits a machine-readable operator manifest; `--schema` emits the output JSON Schema
-3. **Witness** — appends a local receipt record to `~/.cmdrvl/witness.jsonl` on every invocation
-4. **Determinism** — same inputs, same output, every time. No randomness, no side effects, no network calls in the truth path
+1. **Deterministic** — same bytes in, same answer out
+2. **Refusal-aware** — if the tool cannot make a trustworthy claim, it refuses explicitly
+3. **Machine-readable** — JSON output, `--describe`, and `--schema` for agent integration
+4. **Composable** — outputs from one tool can feed the next without glue code
 
-Tools that follow the protocol compose automatically: `assess` scores any tool's output via policy rules. `pack` seals any tool's output into tamper-evident evidence. The witness log records local tool invocation context. No central coordinator — the protocol is the coordinator.
+That means an agent can inspect a tool, run it, and trust that the result is stable enough to use in a real evidence pipeline.
 
 ---
 
-## Reference Implementation
+## Shipped Tools
 
-Composable Rust CLIs. Each tool does one thing. Agents decide what to run — these tools decide what is true.
-
-### Shipped
+You do not need to learn all of these at once. The top of the list is the most approachable; the bottom is more like infrastructure and evidence plumbing.
 
 | Tool | What it does | Install |
 |------|-------------|---------|
+| **[shape](https://github.com/cmdrvl/shape)** | Checks whether two datasets are structurally comparable before you diff them | `brew install cmdrvl/tap/shape` |
+| **[rvl](https://github.com/cmdrvl/rvl)** | Finds the material numeric differences that explain what changed | `brew install cmdrvl/tap/rvl` |
+| **[verify](https://github.com/cmdrvl/verify)** | Checks declared rules and constraints over files or relations | `brew install cmdrvl/tap/verify` |
+| **[benchmark](https://github.com/cmdrvl/benchmark)** | Scores candidate outputs against a gold set | `brew install cmdrvl/tap/cmdrvl-benchmark` |
+| **[assess](https://github.com/cmdrvl/assess)** | Turns evidence into a deterministic PROCEED / ESCALATE / BLOCK classification | `brew install cmdrvl/tap/assess` |
+| **[canon](https://github.com/cmdrvl/canon)** | Resolves entity identifiers deterministically with auditability | `brew install cmdrvl/tap/canon` |
 | **[vacuum](https://github.com/cmdrvl/vacuum)** | Enumerates artifacts in scope, emits a deterministic sorted JSONL manifest with size, mtime, and MIME type | `brew install cmdrvl/tap/vacuum` |
 | **[hash](https://github.com/cmdrvl/hash)** | Streaming content hashing — adds SHA-256 or BLAKE3 byte identity to every artifact in a manifest | `brew install cmdrvl/tap/hash` |
 | **[fingerprint](https://github.com/cmdrvl/fingerprint)** | Template recognition — tests artifacts against versioned assertion-based definitions and produces content hashes | `brew install cmdrvl/tap/fingerprint` |
 | **[profile](https://github.com/cmdrvl/profile)** | Column-scoping configs for report tools — draft/freeze lifecycle, deterministic key suggestion, schema linting | `brew install cmdrvl/tap/profile` |
 | **[lock](https://github.com/cmdrvl/lock)** | Dataset lockfiles — like Cargo.lock for data. Self-hashed, tamper-evident, with `lock verify` for integrity checks | `brew install cmdrvl/tap/lock` |
-| **[shape](https://github.com/cmdrvl/shape)** | Structural comparability gate — can these two datasets be compared at all? | `brew install cmdrvl/tap/shape` |
-| **[rvl](https://github.com/cmdrvl/rvl)** | Reveals the smallest set of numeric changes that explain what actually changed between two datasets | `brew install cmdrvl/tap/rvl` |
-| **[verify](https://github.com/cmdrvl/verify)** | Constraint evaluation — deterministic portable and DuckDB-backed checks over bound artifacts and relations | `brew install cmdrvl/tap/verify` |
-| **[benchmark](https://github.com/cmdrvl/benchmark)** | Gold-set scoring — checks (entity, field, value) assertions against candidate datasets and emits deterministic policy-facing quality bands | `brew install cmdrvl/tap/cmdrvl-benchmark` |
-| **[assess](https://github.com/cmdrvl/assess)** | Decision framing — deterministic PROCEED / ESCALATE / BLOCK classification over a spine evidence bundle | `brew install cmdrvl/tap/assess` |
-| **[canon](https://github.com/cmdrvl/canon)** | Deterministic entity resolution — resolves identifiers against versioned registries with full audit trail | `brew install cmdrvl/tap/canon` |
 | **[pack](https://github.com/cmdrvl/pack)** | Evidence sealing — bundles lockfiles, reports, and tool outputs into one immutable, content-addressed evidence pack | `brew install cmdrvl/tap/pack` |
 
-All twelve tools record to the local witness log, and the evidence-producing tools compose cleanly into lock and pack artifacts.
+All shipped tools also record a local witness receipt so runs can be traced later.
 
-**Typical pipeline:** `vacuum` (what's there?) → `hash` (prove identity) → `fingerprint` (recognize templates) → `lock` (pin inputs) → `shape` (are these comparable?) → `rvl` / `verify` / `benchmark` (analyze) → `assess` (classify) → `pack` (seal the evidence)
+**Typical pipeline:** `shape` → `rvl` / `verify` / `benchmark` → `assess` → `pack`
 
-### In Development
+If you need stronger provenance around inputs, add `vacuum`, `hash`, and `lock` before the analysis step.
+
+### Deferred / Future
 
 | Tool | What it does |
 |------|-------------|
-| **[compare](https://github.com/cmdrvl/compare)** | Exhaustive cell-by-cell diff without materiality compression |
+| **[compare](https://github.com/cmdrvl/compare)** | Exhaustive raw diff capability, currently deferred as a standalone core tool |
 
 ### SEC EDGAR & Financial Data
 
@@ -82,16 +106,33 @@ All twelve tools record to the local witness log, and the evidence-producing too
 | **[regret](https://github.com/cmdrvl/regret)** | Mines git history for high-precision regret signals — reverts, linked fixes, patch-id matches |
 | **[twinning](https://github.com/cmdrvl/twinning)** | In-memory database twin that speaks the real wire protocol — fast testing without a real database |
 
-## Agent Integration
+## For Agent Builders
 
-These tools are built for agent orchestration. Two reference prompts help agents learn the protocol:
+These tools were built to be called by agents. A model can:
+
+- inspect a tool with `--describe`
+- fetch its JSON Schema with `--schema`
+- run it safely in an evidence pipeline
+- handle explicit refusals instead of guessing
+
+Two reference prompts help agents learn the ecosystem:
 
 - **[Agent Operator Guide](./AGENT_PROMPT.md)** — workflows, refusal recovery, schema discovery, and the full tool map
 - **[System Prompt](./SYSTEM_PROMPT.md)** — compact drop-in for agent context windows (~30 lines)
 
-Every shipped tool supports `<tool> --describe` for machine-readable self-discovery and `<tool> --schema` for runtime JSON Schema output.
-
 ## Install
+
+Most people start here:
+
+```bash
+brew install cmdrvl/tap/shape
+brew install cmdrvl/tap/rvl
+brew install cmdrvl/tap/verify
+brew install cmdrvl/tap/cmdrvl-benchmark
+brew install cmdrvl/tap/assess
+```
+
+Full tap:
 
 ```bash
 brew install cmdrvl/tap/vacuum
