@@ -1,8 +1,8 @@
 # CMD+RVL
 
-**Tools that help agents answer hard data questions without hand-waving.**
+**Open-source tools from CMD+RVL that help agents answer hard data questions without hand-waving.**
 
-CMD+RVL is a set of small deterministic CLIs for questions like:
+CMD+RVL is broader than this toolset. We build systems, pipelines, and intelligence layers for reasoning over changing data. The repositories here are the open-source CLI layer we publish for questions like:
 
 - What changed?
 - Are these two datasets even comparable?
