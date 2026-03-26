@@ -6,25 +6,25 @@ Every tool is MIT-licensed, open source, and runs locally with no network depend
 
 ## The tools
 
-Nine shipped tools. Each does one thing. They compose via Unix pipes (stream tools) or file arguments (report tools).
+The current stack centers on composable stream tools, report tools, lifecycle tools, and an expanding validation / scoring / decision chain.
 
 ### Stream pipeline (JSONL in → JSONL out)
 
 ```
-vacuum → hash → fingerprint → lock
+vacuum → hashbytes → fingerprint → lock
 ```
 
 | Tool | What it does | Key flags |
 |------|-------------|-----------|
 | **vacuum** | Scans directories, emits sorted JSONL manifest (path, size, mtime, mime) | `vacuum <DIR>...` `--include` `--exclude` |
-| **hash** | Adds SHA-256 or BLAKE3 byte identity to each record | `--algorithm blake3` |
+| **hashbytes** | Adds SHA-256 or BLAKE3 byte identity to each record | `--algorithm blake3` |
 | **fingerprint** | Tests each artifact against template definitions, produces content hashes | `--fp <ID>` (repeatable, first match wins) `--list` `--diagnose`. YAML definitions in `~/.fingerprint/definitions/` run directly without compilation (override with `FINGERPRINT_DEFINITIONS`). |
 | **lock** | Pins the stream into a self-hashed, tamper-evident lockfile | `--dataset-id` `--as-of` `--note` |
 
 Stream tools read JSONL from stdin, enrich each record, emit to stdout. Pipe them:
 
 ```bash
-vacuum /data/delivery/ | hash | fingerprint --fp csv.v0 | lock --dataset-id "q4" > q4.lock.json
+vacuum /data/delivery/ | hashbytes | fingerprint --fp csv.v0 | lock --dataset-id "q4" > q4.lock.json
 ```
 
 ### Report tools (files in → JSON or human text out)
@@ -44,13 +44,15 @@ Report tools default to human-readable output. Add `--json` for structured outpu
 | **profile** | Column-scoping configs for report tools (draft → frozen lifecycle) | `profile draft init data.csv` `profile freeze` `profile suggest-key` |
 | **pack** | Evidence sealing — bundles lockfiles and reports into content-addressed packs | `pack seal *.json --note "..." --output dir/` |
 
-### Not yet shipped
+### Validation / scoring / decision tools
 
-| Tool | What it will do |
-|------|----------------|
-| **verify** | Invariant checks against declared rules (PASS / FAIL) |
-| **compare** | Exhaustive cell-by-cell diff (all changes, no compression) |
-| **assess** | Decision framing — PROCEED / PROCEED_WITH_RISK / ESCALATE / BLOCK via versioned policy |
+| Tool | What it does | Key flags |
+|------|-------------|-----------|
+| **verify** | Constraint checks against authored or compiled rules | `verify data.csv --rules rules.yaml --json` `verify run constraints.verify.json --bind name=path` |
+| **benchmark** | Gold-set scoring against expected facts | `benchmark normalized.csv --assertions gold_set.jsonl --key comp_id --json` |
+| **assess** | Deterministic PROCEED / PROCEED_WITH_RISK / ESCALATE / BLOCK classification over evidence artifacts | `assess shape.json rvl.json verify.json --policy policy.yaml --json` |
+
+`compare` remains the deferred exhaustive diff tool in the broader spine roadmap.
 
 ---
 
@@ -113,7 +115,7 @@ Suppress with `--no-witness` when benchmarking.
 ### 1. Lock a data delivery
 
 ```bash
-vacuum /data/2026-02/ | hash | lock --dataset-id "feb-delivery" --as-of "2026-02-28" > feb.lock.json
+vacuum /data/2026-02/ | hashbytes | lock --dataset-id "feb-delivery" --as-of "2026-02-28" > feb.lock.json
 ```
 
 You now have a tamper-evident snapshot of every file — path, size, hash, tool versions. Verify later with `lock verify feb.lock.json`.
@@ -121,7 +123,7 @@ You now have a tamper-evident snapshot of every file — path, size, hash, tool 
 ### 2. Identify document types in a corpus
 
 ```bash
-vacuum /dataroom/ | hash | fingerprint --fp argus-model.v1 --fp csv.v0 --fp xlsx.v0 > fp.jsonl
+vacuum /dataroom/ | hashbytes | fingerprint --fp argus-model.v1 --fp csv.v0 --fp xlsx.v0 > fp.jsonl
 ```
 
 Each record now has `fingerprint.matched`, `fingerprint.assertions`, and `fingerprint.content_hash`. Filter matched vs unmatched:
@@ -142,7 +144,7 @@ mkdir -p ~/.fingerprint/definitions
 cp cbre.fp.yaml ~/.fingerprint/definitions/
 
 # Test it immediately — no compile step needed
-vacuum /dataroom/ | hash | fingerprint --fp cbre-appraisal.v1 --diagnose
+vacuum /dataroom/ | hashbytes | fingerprint --fp cbre-appraisal.v1 --diagnose
 
 # Iterate: edit the YAML, re-copy, re-test
 # When stable, compile for production performance:
@@ -188,6 +190,8 @@ profile freeze tape.draft.yaml --family csv.loan_tape.core --version 0 \
 
 Drafts are mutable scratchpads. Frozen profiles are immutable, hashed, recorded in outputs. Explore with drafts, commit with frozen.
 
+Today `rvl` is profile-aware. Check `shape` / `compare` operator surfaces before assuming equivalent `--profile` behavior in the current release line.
+
 ### 5. Seal evidence
 
 ```bash
@@ -216,7 +220,7 @@ Exit `0` = all resolved. Exit `1` = partial (check `.unresolved[]`). Every mappi
 | `E_MISSINGNESS` | rvl | Column is mostly null — edit profile to exclude it |
 | `E_NO_NUMERIC` | rvl | No numeric columns found — check data or scope with `--profile` |
 | `E_UNKNOWN_FP` | fingerprint | Fingerprint ID not installed — `fingerprint --list` to see available |
-| `E_BAD_INPUT` | hash, fingerprint, lock | Upstream tool didn't run — check pipeline order |
+| `E_BAD_INPUT` | hashbytes, fingerprint, lock | Upstream tool didn't run — check pipeline order |
 | `E_COLUMN_NOT_FOUND` | canon, profile | Column name doesn't exist in input — check spelling |
 | `E_INPUT_NOT_LOCKED` | shape, rvl | `--lock` was provided but input file isn't in the lockfile |
 | `E_TOO_LARGE` | shape, rvl | Input exceeds `--max-rows`/`--max-bytes` — increase limit or split |
@@ -254,7 +258,7 @@ Every structured output has a `version` field. Parse it to know the shape:
 | Version | Tool | Output mode |
 |---------|------|-------------|
 | `vacuum.v0` | vacuum | JSONL stream |
-| `hash.v0` | hash | JSONL stream |
+| `hash.v0` | hashbytes | JSONL stream |
 | `fingerprint.v0` | fingerprint | JSONL stream |
 | `lock.v0` | lock | JSON artifact |
 | `shape.v0` | shape | JSON report (`--json`) |
@@ -271,7 +275,7 @@ The spine is the **data layer**. It establishes provenance, identity, comparabil
 - **Orchestrate workflows** — you decide what to run and in what order
 - **Store data** — tools are stateless; they read files and emit structured output
 - **Extract or parse documents** — fingerprint recognizes templates, it doesn't OCR or transform data
-- **Make decisions** — tools produce deterministic facts; you (or `assess`, when shipped) interpret them
+- **Make decisions** — tools produce deterministic facts; you (or `assess`) interpret them
 - **Require a network** — everything runs locally, no APIs, no cloud
 
 You bring the orchestration. The spine brings the truth.
@@ -281,9 +285,9 @@ You bring the orchestration. The spine brings the truth.
 ## Install
 
 ```bash
-# All nine tools via Homebrew
+# Core provenance / comparison set via Homebrew
 brew install cmdrvl/tap/vacuum
-brew install cmdrvl/tap/hash
+brew install cmdrvl/tap/hash   # installs the `hashbytes` binary
 brew install cmdrvl/tap/fingerprint
 brew install cmdrvl/tap/profile
 brew install cmdrvl/tap/lock
@@ -295,7 +299,7 @@ brew install cmdrvl/tap/pack
 
 Verify:
 ```bash
-vacuum --version && hash --version && fingerprint --version && \
+vacuum --version && hashbytes --version && fingerprint --version && \
 profile --version && lock --version && shape --version && \
 rvl --version && canon --version && pack --version
 ```

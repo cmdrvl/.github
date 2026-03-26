@@ -4,14 +4,14 @@
 
 ---
 
-You have access to the epistemic spine — nine deterministic Rust CLI tools for data provenance. They compose via Unix pipes (stream tools) or file arguments (report tools). Every tool exits 0 (clean), 1 (domain-negative), or 2 (refusal with structured reason and suggested fix).
+You have access to the epistemic spine — a family of deterministic Rust CLI tools for provenance, validation, and decision support. They compose via Unix pipes (stream tools) or file arguments (report tools). Every tool exits 0 (clean), 1 (domain-negative), or 2 (refusal with structured reason and suggested fix).
 
 **Stream pipeline** (JSONL in → JSONL out):
 ```
-vacuum <DIR> | hash | fingerprint --fp <ID> | lock --dataset-id <NAME> > dataset.lock.json
+vacuum <DIR> | hashbytes | fingerprint --fp <ID> | lock --dataset-id <NAME> > dataset.lock.json
 ```
 - `vacuum` scans directories → sorted manifest
-- `hash` adds SHA-256/BLAKE3 identity
+- `hashbytes` adds SHA-256/BLAKE3 identity
 - `fingerprint` recognizes templates via assertions, adds content hash
 - `lock` pins everything into self-hashed lockfile
 
@@ -24,10 +24,15 @@ vacuum <DIR> | hash | fingerprint --fp <ID> | lock --dataset-id <NAME> > dataset
 - `profile draft init data.csv` → generate column-scoping config; `profile freeze` to make immutable
 - `pack seal *.json --note "..." --output dir/` → content-addressed evidence bundle
 
+**Validation / scoring / decision tools in the current stack**:
+- `verify data.csv --rules rules.yaml --json` or `verify run constraints.verify.json --bind name=path`
+- `benchmark normalized.csv --assertions gold_set.jsonl --key comp_id --json`
+- `assess shape.json rvl.json verify.json --policy policy.yaml --json`
+
 **Refusal handling**: Exit 2 means the tool cannot produce a confident answer. The refusal envelope includes `code` (E_UPPERCASE), `detail` (structured context), and `next_command` (literal retry command when mechanical recovery is possible). If `next_command` is present, execute it directly. If null, apply judgment using `detail`.
 
 **Self-discovery**: Run `<tool> --describe` for the full operator contract (args, options, exit codes, refusals). Run `<tool> --schema` for the output JSON Schema. Run `fingerprint --list` for available fingerprint IDs.
 
 Common refusals: `E_NEED_KEY` → add `--key`; `E_DIFFUSE` → lower `--threshold` or scope with `--profile`; `E_MISSINGNESS` → exclude column via profile; `E_UNKNOWN_FP` → check `fingerprint --list`.
 
-Install: `brew install cmdrvl/tap/{vacuum,hash,fingerprint,profile,lock,shape,rvl,canon,pack}`
+Install core Homebrew set: `brew install cmdrvl/tap/{vacuum,hash,fingerprint,profile,lock,shape,rvl,canon,pack}` (`cmdrvl/tap/hash` provides the `hashbytes` binary). Check each repo for the current install surface of `verify`, `benchmark`, and `assess`.

@@ -68,19 +68,14 @@ What changed between two quarterly reports?
 
 ```bash
 # Step 1: ask whether they are comparable
-shape q3/positions.csv q4/positions.csv
+shape q3/positions.csv q4/positions.csv --json > shape.report.json
 
 # Step 2: ask what materially changed
-#
-# Example output:
-# 3 of 847 rows changed
-# net +$2.1M notional
-# 1 new position
-rvl q3/positions.csv q4/positions.csv
+rvl q3/positions.csv q4/positions.csv --json > rvl.report.json
 
 # Step 3: lock and seal the evidence if it matters
-vacuum q3/ q4/ | hash | lock save --name quarterly
-pack create --lock quarterly.lock --include q3/ q4/
+vacuum q3/ q4/ | hashbytes | lock --dataset-id quarterly > quarterly.lock.json
+pack seal quarterly.lock.json shape.report.json rvl.report.json --output evidence/quarterly/
 ```
 
 ---
@@ -111,7 +106,7 @@ You do not need to learn all of these at once. The top of the list is the most a
 | **[assess](https://github.com/cmdrvl/assess)** | Turns evidence into a deterministic PROCEED / ESCALATE / BLOCK classification | `brew install cmdrvl/tap/assess` |
 | **[canon](https://github.com/cmdrvl/canon)** | Resolves entity identifiers deterministically with auditability | `brew install cmdrvl/tap/canon` |
 | **[vacuum](https://github.com/cmdrvl/vacuum)** | Enumerates artifacts in scope, emits a deterministic sorted JSONL manifest with size, mtime, and MIME type | `brew install cmdrvl/tap/vacuum` |
-| **[hash](https://github.com/cmdrvl/hash)** | Streaming content hashing — adds SHA-256 or BLAKE3 byte identity to every artifact in a manifest | `brew install cmdrvl/tap/hash` |
+| **[hash](https://github.com/cmdrvl/hash)** | Streaming content hashing — adds SHA-256 or BLAKE3 byte identity to every artifact in a manifest. The installed binary is `hashbytes`. | `brew install cmdrvl/tap/hash` |
 | **[fingerprint](https://github.com/cmdrvl/fingerprint)** | Template recognition — tests artifacts against versioned assertion-based definitions and produces content hashes | `brew install cmdrvl/tap/fingerprint` |
 | **[profile](https://github.com/cmdrvl/profile)** | Column-scoping configs for report tools — draft/freeze lifecycle, deterministic key suggestion, schema linting | `brew install cmdrvl/tap/profile` |
 | **[lock](https://github.com/cmdrvl/lock)** | Dataset lockfiles — like Cargo.lock for data. Self-hashed, tamper-evident, with `lock verify` for integrity checks | `brew install cmdrvl/tap/lock` |
@@ -121,7 +116,7 @@ All shipped tools also record a local witness receipt so runs can be traced late
 
 **Typical pipeline:** `shape` → `rvl` / `verify` / `benchmark` → `assess` → `pack`
 
-If you need stronger provenance around inputs, add `vacuum`, `hash`, and `lock` before the analysis step.
+If you need stronger provenance around inputs, add `vacuum`, `hashbytes`, and `lock` before the analysis step.
 
 ### Deferred / Future
 
@@ -174,7 +169,7 @@ Full tap:
 
 ```bash
 brew install cmdrvl/tap/vacuum
-brew install cmdrvl/tap/hash
+brew install cmdrvl/tap/hash   # provides the `hashbytes` binary
 brew install cmdrvl/tap/fingerprint
 brew install cmdrvl/tap/profile
 brew install cmdrvl/tap/lock
