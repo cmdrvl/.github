@@ -105,6 +105,7 @@ You do not need to learn all of these at once. The top of the list is the most a
 | **[benchmark](https://github.com/cmdrvl/benchmark)** | Scores candidate outputs against a gold set | `brew install cmdrvl/tap/cmdrvl-benchmark` |
 | **[assess](https://github.com/cmdrvl/assess)** | Turns evidence into a deterministic PROCEED / ESCALATE / BLOCK classification | `brew install cmdrvl/tap/assess` |
 | **[canon](https://github.com/cmdrvl/canon)** | Resolves entity identifiers deterministically with auditability | `brew install cmdrvl/tap/canon` |
+| **[veil](https://github.com/cmdrvl/veil)** | Prevents raw sensitive file reads from entering an agent's context while allowing authorized subprocess workflows | `brew install cmdrvl/tap/veil` |
 | **[vacuum](https://github.com/cmdrvl/vacuum)** | Enumerates artifacts in scope, emits a deterministic sorted JSONL manifest with size, mtime, and MIME type | `brew install cmdrvl/tap/vacuum` |
 | **[hash](https://github.com/cmdrvl/hash)** | Streaming content hashing — adds SHA-256 or BLAKE3 byte identity to every artifact in a manifest. The installed binary is `hashbytes`. | `brew install cmdrvl/tap/hash` |
 | **[fingerprint](https://github.com/cmdrvl/fingerprint)** | Template recognition — tests artifacts against versioned assertion-based definitions and produces content hashes | `brew install cmdrvl/tap/fingerprint` |
@@ -163,6 +164,7 @@ brew install cmdrvl/tap/rvl
 brew install cmdrvl/tap/verify
 brew install cmdrvl/tap/cmdrvl-benchmark
 brew install cmdrvl/tap/assess
+brew install cmdrvl/tap/veil
 ```
 
 Full tap:
@@ -178,6 +180,7 @@ brew install cmdrvl/tap/rvl
 brew install cmdrvl/tap/verify
 brew install cmdrvl/tap/cmdrvl-benchmark
 brew install cmdrvl/tap/assess
+brew install cmdrvl/tap/veil
 brew install cmdrvl/tap/canon
 brew install cmdrvl/tap/pack
 ```
