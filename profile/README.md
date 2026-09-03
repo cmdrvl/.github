@@ -8,6 +8,8 @@ CMD+RVL builds systems for reasoning over changing data. These repos are the ope
 
 The fastest way to understand these tools is to hand them to your coding agent. Paste [`SYSTEM_PROMPT.md`](./SYSTEM_PROMPT.md) into its context, or point it at [`AGENT_PROMPT.md`](./AGENT_PROMPT.md) for the full guide. Every tool also answers `--describe` and `--schema` directly, so an agent can explore on its own from there.
 
+Use these in conjunction with our [MCP servers](https://cmdrvl.com/mcp-servers/) — the tools verify and seal what your agent already has locally, the MCP servers give it public and licensed data to check against.
+
 ## What changes
 
 Without these tools, an agent guesses:
@@ -90,6 +92,7 @@ brew install cmdrvl/tap/{vacuum,hash,fingerprint,profile,lock,shape,rvl,verify,b
 ## Links
 
 - [cmdrvl.com](https://cmdrvl.com)
+- [MCP servers](https://cmdrvl.com/mcp-servers/)
 - [signals.cmdrvl.com](https://signals.cmdrvl.com)
 - [dealcharts.org](https://dealcharts.org)
 - [@cmdrvl](https://x.com/cmdrvl) on X
