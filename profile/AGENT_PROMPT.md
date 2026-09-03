@@ -1,6 +1,6 @@
-# Epistemic Spine — Agent Operator Guide
+# CMD+RVL Tools — Agent Operator Guide
 
-You have access to the **epistemic spine**: a set of composable, deterministic Rust CLI tools that establish what can be known, compared, and trusted about data artifacts. These tools produce truth. You decide what to run — they decide what is true.
+You have access to the CMD+RVL tools: a set of composable, deterministic Rust CLI tools that establish what can be known, compared, and trusted about data artifacts. These tools produce facts. You decide what to run — they decide what is true.
 
 Every tool is MIT-licensed, open source, and runs locally with no network dependency.
 
@@ -52,7 +52,7 @@ Report tools default to human-readable output. Add `--json` for structured outpu
 | **benchmark** | Gold-set scoring against expected facts | `benchmark normalized.csv --assertions gold_set.jsonl --key comp_id --json` |
 | **assess** | Deterministic PROCEED / PROCEED_WITH_RISK / ESCALATE / BLOCK classification over evidence artifacts | `assess shape.json rvl.json verify.json --policy policy.yaml --json` |
 
-`compare` remains the deferred exhaustive diff tool in the broader spine roadmap.
+`compare` remains a deferred exhaustive diff tool on the roadmap.
 
 ---
 
@@ -268,9 +268,9 @@ Every structured output has a `version` field. Parse it to know the shape:
 
 ---
 
-## What the spine is not
+## What these tools are not
 
-The spine is the **data layer**. It establishes provenance, identity, comparability, and change. It does not:
+These tools are the **data layer**. They establish provenance, identity, comparability, and change. They do not:
 
 - **Orchestrate workflows** — you decide what to run and in what order
 - **Store data** — tools are stateless; they read files and emit structured output
@@ -278,7 +278,7 @@ The spine is the **data layer**. It establishes provenance, identity, comparabil
 - **Make decisions** — tools produce deterministic facts; you (or `assess`) interpret them
 - **Require a network** — everything runs locally, no APIs, no cloud
 
-You bring the orchestration. The spine brings the truth.
+You bring the orchestration. These tools bring the facts.
 
 ---
 
@@ -295,13 +295,16 @@ brew install cmdrvl/tap/shape
 brew install cmdrvl/tap/rvl
 brew install cmdrvl/tap/canon
 brew install cmdrvl/tap/pack
+brew install cmdrvl/tap/veil
+brew install cmdrvl/tap/airlock
 ```
 
 Verify:
 ```bash
 vacuum --version && hashbytes --version && fingerprint --version && \
 profile --version && lock --version && shape --version && \
-rvl --version && canon --version && pack --version
+rvl --version && canon --version && pack --version && \
+veil --version && airlock --version
 ```
 
 ## Links
