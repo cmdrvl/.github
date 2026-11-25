@@ -35,13 +35,13 @@ Example: an agent gets two quarterly CSVs and needs to know if anything importan
 | **[shape](https://github.com/cmdrvl/shape)** | Checks whether two datasets are structurally comparable before you diff them |
 | **[rvl](https://github.com/cmdrvl/rvl)** | Finds the material numeric differences that explain what changed |
 | **[verify](https://github.com/cmdrvl/verify)** | Checks declared rules and constraints over files or relations |
-| **[benchmark](https://github.com/cmdrvl/benchmark)** | Scores candidate outputs against a gold set |
+| **[benchmark](https://github.com/cmdrvl/benchmark)** | Scores candidate outputs against a gold set; the Homebrew formula is `cmdrvl-benchmark` and installs the `benchmark` binary |
 | **[assess](https://github.com/cmdrvl/assess)** | Turns evidence into a deterministic proceed / escalate / block call |
 | **[canon](https://github.com/cmdrvl/canon)** | Resolves entity identifiers against versioned registries |
 | **[veil](https://github.com/cmdrvl/veil)** | Keeps raw sensitive files out of an agent's context while still allowing authorized subprocess workflows |
 | **[airlock](https://github.com/cmdrvl/airlock)** | Proves what did and didn't cross into a model's context |
 | **[vacuum](https://github.com/cmdrvl/vacuum)** | Enumerates files into a deterministic manifest |
-| **[hash](https://github.com/cmdrvl/hash)** | Adds SHA-256/BLAKE3 content identity to a manifest (installs as `hashbytes`) |
+| **[hashbytes](https://github.com/cmdrvl/hash)** | Adds SHA-256/BLAKE3 content identity to a manifest; the Homebrew formula is `cmdrvl-hash` |
 | **[fingerprint](https://github.com/cmdrvl/fingerprint)** | Matches files against versioned template definitions |
 | **[profile](https://github.com/cmdrvl/profile)** | Defines and freezes a column-scoping config for the tools above |
 | **[lock](https://github.com/cmdrvl/lock)** | Pins a dataset into a self-hashed, tamper-evident lockfile |
@@ -78,16 +78,16 @@ Typical pipeline: `shape` → `rvl` / `verify` / `benchmark` → `assess` → `p
 ## Install
 
 ```bash
-brew install cmdrvl/tap/{shape,rvl,verify,benchmark,assess,veil,airlock}
+brew install cmdrvl/tap/{shape,rvl,verify,cmdrvl-hash,cmdrvl-benchmark,assess,veil,airlock}
 ```
 
 Full set:
 
 ```bash
-brew install cmdrvl/tap/{vacuum,hash,fingerprint,profile,lock,shape,rvl,verify,benchmark,assess,canon,pack,veil,airlock}
+brew install cmdrvl/tap/{vacuum,cmdrvl-hash,fingerprint,profile,lock,shape,rvl,verify,cmdrvl-benchmark,assess,canon,pack,veil,airlock}
 ```
 
-(`cmdrvl/tap/hash` provides the `hashbytes` binary; `cmdrvl/tap/benchmark` installs as `cmdrvl-benchmark`.)
+(`cmdrvl-hash` installs `hashbytes`; `cmdrvl-benchmark` installs `benchmark`.)
 
 ## Links
 

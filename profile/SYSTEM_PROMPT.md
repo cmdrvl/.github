@@ -39,4 +39,4 @@ vacuum <DIR> | hashbytes | fingerprint --fp <ID> | lock --dataset-id <NAME> > da
 
 Common refusals: `E_NEED_KEY` → add `--key`; `E_DIFFUSE` → lower `--threshold` or scope with `--profile`; `E_MISSINGNESS` → exclude the column via a profile; `E_UNKNOWN_FP` → check `fingerprint --list`.
 
-Install: `brew install cmdrvl/tap/{vacuum,hash,fingerprint,profile,lock,shape,rvl,canon,pack,veil,airlock}` (`cmdrvl/tap/hash` provides the `hashbytes` binary). Check each repo for the current install surface of `verify`, `benchmark`, and `assess`.
+Install: `brew install cmdrvl/tap/{vacuum,cmdrvl-hash,fingerprint,profile,lock,shape,rvl,verify,cmdrvl-benchmark,assess,canon,pack,veil,airlock}`. `cmdrvl-hash` installs the `hashbytes` binary; `cmdrvl-benchmark` installs `benchmark`.

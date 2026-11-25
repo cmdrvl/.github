@@ -287,12 +287,15 @@ You bring the orchestration. These tools bring the facts.
 ```bash
 # Core provenance / comparison set via Homebrew
 brew install cmdrvl/tap/vacuum
-brew install cmdrvl/tap/hash   # installs the `hashbytes` binary
+brew install cmdrvl/tap/cmdrvl-hash   # installs the `hashbytes` binary
 brew install cmdrvl/tap/fingerprint
 brew install cmdrvl/tap/profile
 brew install cmdrvl/tap/lock
 brew install cmdrvl/tap/shape
 brew install cmdrvl/tap/rvl
+brew install cmdrvl/tap/verify
+brew install cmdrvl/tap/cmdrvl-benchmark   # installs the `benchmark` binary
+brew install cmdrvl/tap/assess
 brew install cmdrvl/tap/canon
 brew install cmdrvl/tap/pack
 brew install cmdrvl/tap/veil
@@ -303,9 +306,13 @@ Verify:
 ```bash
 vacuum --version && hashbytes --version && fingerprint --version && \
 profile --version && lock --version && shape --version && \
-rvl --version && canon --version && pack --version && \
+rvl --version && verify --version && benchmark --version && \
+assess --version && canon --version && pack --version && \
 veil --version && airlock --version
 ```
+
+`vacuum` also installs `s3-to-vacuum` for turning S3 object listings into the
+same deterministic manifest stream.
 
 ## Links
 
