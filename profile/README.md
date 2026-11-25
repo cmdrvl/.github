@@ -92,14 +92,16 @@ Pin inputs, recognize document templates, resolve canonical IDs, and seal tamper
 | **[lock](https://github.com/cmdrvl/lock)** | `Cargo.lock` for data — pins artifacts, hashes, fingerprints, and tool versions into a self-hashed JSON lockfile |
 | **[pack](https://github.com/cmdrvl/pack)** | Bundles lockfiles, reports, profiles, and registries into a closed-set, content-addressed evidence pack verifiable offline (`pack verify`) |
 
-### Agent Skills, Umbrella CLI & Shared Contracts
+### Agent Skills, Umbrella CLI & Shared Libraries
 
 | Repo | What it does |
 |------|-------------|
 | **[receipts](https://github.com/cmdrvl/receipts)** | One-command MIT skills for Claude Code, Codex, Gemini CLI, and Cursor wrapping `shape` → `rvl` → `pack` into 30-second verifiable CSV receipts |
-| **[cmdrvl](https://github.com/cmdrvl/cmdrvl)** | *(Early scaffolding)* Unified porcelain CLI front door (`inspect`, `diff`, `check`, `receipt`, `capabilities`, `doctor`) for the spine |
-| **[evidence-protocol](https://github.com/cmdrvl/evidence-protocol)** | Public `.v0` wire contracts (`inquiry`, `grant`, `artifact`, `plan`, `receipt`, `answer`, `capability`), JSON Schemas, and fixtures |
-| **[spine-rules](https://github.com/cmdrvl/spine-rules)** | Shared golden-rules test macro (`golden_rules_suite!`), composite-key conformance, `operator.v0` types, and `ast-grep` static checks |
+| **[cmdrvl](https://github.com/cmdrvl/cmdrvl)** | *(Early scaffolding)* Unified porcelain CLI front door (`orient`, `inspect`, `diff`, `check`, `receipt`, `twin`, `sandbox`, `doctor`, plus git-style `cmdrvl-<subcommand>` plugin dispatch) for the spine |
+| **[evidence-protocol](https://github.com/cmdrvl/evidence-protocol)** | Public `.v0` wire contracts (`inquiry`, `grant`, `artifact`, `plan`, `receipt`, `answer`, `capability`, `control`), JSON Schemas, and fixtures |
+| **[spine-rules](https://github.com/cmdrvl/spine-rules)** | Shared golden-rules test macro (`golden_rules_suite!`), composite-key conformance, `operator.v1` + `cmdrvl.doctor.v1` contracts, and `ast-grep` static checks |
+| **[tabular](https://github.com/cmdrvl/tabular)** | Shared deterministic Rust tabular reader (`CSV`, `TSV`, `JSONL`, `Parquet`, `XLSX`) with one cell model and refusal taxonomy across spine tools |
+| **[boundary-detectors](https://github.com/cmdrvl/boundary-detectors)** | Shared `#![forbid(unsafe_code)]` pure-Rust detectors (secrets, PII, tabular dumps, blobs + recursive base64/hex decode, paths, magic bytes, and one-way shingle Bloom filters) powering `veil` and `airlock` |
 | **[decoding](https://github.com/cmdrvl/decoding)** | Deterministic convergence engine that settles conflicting multi-source claims with source-ancestry deduplication and bounded escalations |
 
 Typical pipeline: `shape` → `rvl` / `verify` / `benchmark` → `assess` → `pack`. Add `vacuum` → `hashbytes` → `fingerprint` → `lock` upstream for full input provenance.
