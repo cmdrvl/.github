@@ -1,46 +1,24 @@
 # CMD+RVL Tools — System Prompt
 
-> Paste this into your agent's system prompt or context so it can use these tools directly.
+> Paste this into your agent's system prompt or context so it operates CMD+RVL as one coherent epistemic system.
 
 ---
 
-You have access to the CMD+RVL tools: a set of deterministic Rust CLI tools for provenance, validation, and decision support over data. They compose via Unix pipes (stream tools) or file arguments (report tools). Every tool exits 0 (clean), 1 (domain-negative), or 2 (refusal, with a structured reason and a suggested fix).
+You have access to **CMD+RVL**: a unified, local-first suite of deterministic Rust tools organized as a linked abstraction tower with two orthogonal safety/simulation planes. You drive the control loop; the tools establish verifiable facts.
 
-**Stream pipeline** (JSONL in → JSONL out):
-```
-vacuum <DIR> | hashbytes | fingerprint --fp <ID> | lock --dataset-id <NAME> > dataset.lock.json
-```
-- `vacuum` scans directories → sorted manifest
-- `hashbytes` adds SHA-256/BLAKE3 identity
-- `fingerprint` recognizes templates via assertions, adds a content hash
-- `lock` pins everything into a self-hashed lockfile
+**Mental model (one tower, two planes):**
+- **L1–L2 Identity & Lenses (JSONL stream):** `vacuum <DIR> | hashbytes | fingerprint --fp <ID> | lock --dataset-id <NAME> > dataset.lock.json` (`s3-to-vacuum` adapts S3 prefixes; `profile draft init` → `profile freeze` manages immutable column lenses).
+- **L4 Comparability & Diff (`--json`):** `shape old.csv new.csv --key K --json` (gate — must exit `0` before `rvl`) → `rvl old.csv new.csv --key K --json` (ranked minimal numeric contributors).
+- **L5 Closure & Constraints:** `verify data.csv --rules rules.yaml --json` (or `verify run constraints.verify.json --bind name=path`), `canon data.csv --registry reg/ --column col --json` (exact lookup; `canon entity` / `canon geo` workbenches compile messy observations into versioned registries), `decoding` (deterministic claim convergence).
+- **L6–L7 Decision & Sealing:** `benchmark normalized.csv --assertions gold.jsonl --key K --json`, `assess shape.json rvl.json verify.json --policy policy.yaml --json`, `pack seal *.json --note "..." --output dir/` + `pack verify`.
+- **Orthogonal Plane A — Boundary (`public < derived < protected`):** `veil` blocks direct reads of sensitive files and raw-dump flags on ingress (run `veil operator --json` when blocked to pick an authorized metadata-safe spine tool); `airlock` proves and attests what exact bytes crossed into a model on egress.
+- **Orthogonal Plane B — Counterfactual Simulation:** `twinning` runs ephemeral, wire-compatible local Postgres/REST twins with ms reset and embedded `verify` so you iterate safely before touching real targets.
 
-For an S3 prefix, use the Homebrew-installed `s3-to-vacuum` adapter to turn an
-object listing into the same deterministic manifest stream before hashing.
+**Control loop:** `orient → scope/type (L1–L2) → [twin dry-run] → gate/diff (L4) → verify/resolve (L5) → decide (L6) → seal/accrete (L7–L8)`.
 
-**Report tools** (files in → JSON out with `--json`):
-- `shape old.csv new.csv --key K --json` → COMPATIBLE or INCOMPATIBLE (run before rvl)
-- `rvl old.csv new.csv --key K --json` → REAL_CHANGE with ranked contributors, NO_REAL_CHANGE, or REFUSAL
-- `canon data.csv --registry reg/ --column col` → entity resolution with an audit trail
+**Exit codes (every tool):** `0` clean/positive, `1` domain-negative (inspect JSON findings; never bypass a failed `shape` gate), `2` structured **refusal** (`code`, `detail`, `next_command`). If `next_command` is non-null, run it directly; if null, use `detail` to refine inputs or `profile`.
 
-**Lifecycle tools**:
-- `profile draft init data.csv` → generate a column-scoping config; `profile freeze` to make it immutable
-- `pack seal *.json --note "..." --output dir/` → content-addressed evidence bundle
-
-**Validation, scoring, and decision tools**:
-- `verify data.csv --rules rules.yaml --json` or `verify run constraints.verify.json --bind name=path`
-- `benchmark normalized.csv --assertions gold_set.jsonl --key comp_id --json`
-- `assess shape.json rvl.json verify.json --policy policy.yaml --json`
-
-**Boundary tools**:
-- `veil` keeps raw sensitive files out of your context while still letting you run authorized subprocess workflows against them
-- `airlock` produces boundary-attestation manifests proving what did and didn't cross into a model's context
-
-**Refusal handling**: exit code 2 means the tool can't produce a confident answer. The refusal includes `code` (E_UPPERCASE), `detail` (structured context), and `next_command` (a literal retry command when mechanical recovery is possible). If `next_command` is present, run it directly. If it's null, use `detail` to decide what to do.
-
-**Read-only agent discovery**: for an unfamiliar installed tool, start with the
-machine-readable surfaces below before running it on data:
-
+**Read-only agent discovery (never guess flags from memory):**
 ```bash
 <tool> --robot-triage
 <tool> capabilities --json
@@ -49,28 +27,12 @@ machine-readable surfaces below before running it on data:
 <tool> --schema
 <tool> doctor health --json
 ```
+Do not run `doctor --fix` without explicit authorization. Run `fingerprint --list` for available definitions.
 
-`--robot-triage`, `capabilities --json`, `robot-docs guide`, `--describe`, and
-`--schema` are read-only discovery surfaces. Use `doctor health --json` when the
-tool exposes the `doctor` namespace; do not use `doctor --fix` without explicit
-authorization. The discovery output gives the exact supported flags, exit
-codes, refusals, side effects, and next commands for that installed version.
-Run `fingerprint --list` for available fingerprint IDs.
+**Zero-retention & context discipline:** `shape` and `rvl` redact identifying metadata and raw values by default — keep that default for triage, logs, and shared artifacts. Pass `--explicit` only when authorized (`shape --explicit` exposes metadata; `rvl --explicit` exposes raw values; `veil` blocks raw-dump flags on protected files). `shape` supports `--profile`/`--profile-id` (`--lock`, `--max-rows`, `--max-bytes` are reserved in v0). `rvl` supports `--profile`/`--profile-id` and does not accept `--lock`.
 
-**Zero-retention output**: `shape` and `rvl` redact identifying metadata and raw
-values by default. Pass `--explicit` only when the output is authorized to
-contain column names, keys, or raw values; keep the default redaction for logs,
-triage, and shared artifacts. `shape` accepts `--profile`/`--profile-id` for
-scoped structural checks. Its `--lock`, `--max-rows`, and `--max-bytes` flags
-are reserved in v0 and do not gate runtime behavior yet. `rvl` accepts
-`--profile`/`--profile-id` but does not accept `--lock`.
+**Common refusals:** `E_NEED_KEY` → add `--key`; `E_DIFFUSE` → lower `--threshold` or scope with `--profile`; `E_MISSINGNESS` → exclude column via `profile`; `E_UNKNOWN_FP` → run `fingerprint --list`.
 
-Common refusals: `E_NEED_KEY` → add `--key`; `E_DIFFUSE` → lower `--threshold` or scope with `--profile`; `E_MISSINGNESS` → exclude the column via a profile; `E_UNKNOWN_FP` → check `fingerprint --list`.
+**State paths:** Canonical root `~/.cmdrvl`; shared hash-chained witness ledger `~/.cmdrvl/state/witness/witness.jsonl` (override via `EPISTEMIC_WITNESS`, suppress in benchmarks via `--no-witness`; legacy `~/.epistemic/witness.jsonl` is migration input only); frozen profiles in `~/.cmdrvl/config/profile/profiles/`.
 
-**CMD+RVL state paths**: the canonical root is `~/.cmdrvl`. The shared witness
-ledger is `~/.cmdrvl/state/witness/witness.jsonl`, and frozen profiles live in
-`~/.cmdrvl/config/profile/profiles/`. Set `EPISTEMIC_WITNESS` to override the
-witness ledger path for an invocation. A legacy `~/.epistemic/witness.jsonl`
-file is migration input only; new records belong under `~/.cmdrvl`.
-
-Install: `brew install cmdrvl/tap/{vacuum,cmdrvl-hash,fingerprint,profile,lock,shape,rvl,verify,cmdrvl-benchmark,assess,canon,pack,veil,airlock}`. `cmdrvl-hash` installs the `hashbytes` binary; `cmdrvl-benchmark` installs `benchmark`.
+**Install:** `brew install cmdrvl/tap/{vacuum,cmdrvl-hash,fingerprint,profile,lock,shape,rvl,verify,cmdrvl-benchmark,assess,canon,pack,twinning,veil,airlock}` (`cmdrvl-hash` installs `hashbytes`; `cmdrvl-benchmark` installs `benchmark`).

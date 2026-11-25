@@ -1,86 +1,111 @@
-# CMD+RVL Tools — Agent Operator Guide
+# CMD+RVL — Agent Operator Guide
 
-You have access to the CMD+RVL tools: a set of composable, deterministic Rust CLI tools that establish what can be known, compared, and trusted about data artifacts. These tools produce facts. You decide what to run — they decide what is true.
+You are operating **CMD+RVL**: a unified, deterministic, local-first Rust system that establishes what can be known, compared, simulated, and proven about data — without leaking raw sensitive bytes into your context window.
+
+These tools produce verifiable facts. You drive the control loop — they decide what is true.
 
 Every tool is MIT-licensed, open source, and runs locally with no network dependency.
 
-## The tools
+---
 
-The current stack centers on composable stream tools, report tools, lifecycle tools, and an expanding validation / scoring / decision chain.
+## Mental Model: One Tower, Two Orthogonal Planes
 
-### Stream pipeline (JSONL in → JSONL out)
+Do not treat these tools as 15 disconnected CLIs. Operate them as **one linked abstraction tower** cut by **two orthogonal planes**:
 
+```text
+  ORTHOGONAL PLANE A — BOUNDARY & EXPOSURE (public < derived < protected)
+    Ingress: veil    (blocks direct raw reads; OS sandbox + broker + --explicit flag guard)
+    Egress:  airlock (proves/gates what crosses to models; signed manifests + wire proxy)
+
+  VERTICAL EPISTEMIC TOWER (each layer links downward by content hash + receipt)
+    L0–L1  Identity & Scope    vacuum · s3-to-vacuum · hashbytes · lock
+    L2     Type & Lens         fingerprint · profile (draft -> frozen)
+    L4     Comparability/Diff  shape (gate) · rvl (minimal numeric explanation)
+    L5     Closure & Rules     verify · canon (exact lookup / entity / geo) · decoding
+    L6     Decision            benchmark · assess (PROCEED | RISK | ESCALATE | BLOCK)
+    L7–L8  Seal & Accrete      pack · witness ledger · versioned registries & champions
+    L10    Agent Control       --robot-triage · --describe · capabilities · cmdrvl orient
+
+  ORTHOGONAL PLANE B — COUNTERFACTUAL SIMULATION
+    twinning (ephemeral Postgres/REST/warehouse twins, ms reset, embedded verify)
 ```
-vacuum → hashbytes → fingerprint → lock
+
+### The Agent Control Loop
+
+```text
+orient → scope & type (L1–L2) → [twin dry-run] → gate & diff (L4) → verify & resolve (L5) → decide (L6) → seal & accrete (L7–L8)
 ```
 
-| Tool | What it does | Key flags |
-|------|-------------|-----------|
-| **vacuum** | Scans directories, emits sorted JSONL manifest (path, size, mtime, mime) | `vacuum <DIR>...` `--include` `--exclude` |
-| **s3-to-vacuum** | Converts an S3 object listing into the `vacuum.v0` JSONL manifest format | `s3-to-vacuum s3://bucket/prefix/` |
-| **hashbytes** | Adds SHA-256 or BLAKE3 byte identity to each record | `--algorithm blake3` |
-| **fingerprint** | Tests each artifact against template definitions, produces content hashes | `--fp <ID>` (repeatable, first match wins) `--list` `--diagnose`. YAML definitions in `~/.fingerprint/definitions/` run directly without compilation (override with `FINGERPRINT_DEFINITIONS`). |
-| **lock** | Pins the stream into a self-hashed, tamper-evident lockfile | `--dataset-id` `--as-of` `--note` |
+1. **Orient before acting:** Inspect installed contracts and boundary posture with read-only discovery before running data commands. Never guess flags from memory.
+2. **Protect your context budget:** Keep default redaction on; read bounded summaries and `blake3:` / `sha256:` refs rather than raw files or huge JSON dumps; iterate on deltas, not full re-reads.
+3. **Simulate before mutating:** When iterating on extractors, migrations, or SQL queries, run against `twinning` (ephemeral local twin + embedded `verify`) until clean before touching real targets.
+4. **Promote, don't leave prose:** Turn resolved discoveries into durable deterministic artifacts — frozen `profile`s, `fingerprint` YAML definitions, `verify` rule sets, versioned `canon` registries, and sealed `pack`s — so future agents pay zero tokens to re-learn them.
 
-Stream tools read JSONL from stdin, enrich each record, emit to stdout. Pipe them:
+---
+
+## Tool Catalog by Layer
+
+### L1–L2: Provenance, Typing & Lenses (Stream: JSONL in → JSONL out)
 
 ```bash
 vacuum /data/delivery/ | hashbytes | fingerprint --fp csv.v0 | lock --dataset-id "q4" > q4.lock.json
 ```
 
-### Report tools (files in → JSON or human text out)
+| Tool | Role | Key command |
+|------|------|-------------|
+| **vacuum** | Scans directories into sorted `vacuum.v0` JSONL manifests | `vacuum <DIR>... --include --exclude` |
+| **s3-to-vacuum** | Converts an S3 prefix listing into `vacuum.v0` JSONL | `s3-to-vacuum s3://bucket/prefix/` |
+| **hashbytes** | Enriches stream with SHA-256 or BLAKE3 byte identity | `hashbytes --algorithm blake3` |
+| **fingerprint** | Tests artifacts against versioned template assertions (YAML in `~/.fingerprint/definitions/` runs directly without compile) | `fingerprint --fp <ID> --diagnose` / `--list` |
+| **lock** | Pins manifest + tool versions into a self-hashed lockfile | `lock --dataset-id "q4" --as-of "2026-02-28"` |
+| **profile** | Column-scoping lenses (`draft` scratchpad → immutable `frozen` lens) | `profile draft init data.csv` / `profile freeze` / `profile suggest-key` |
 
-| Tool | What it does | Key flags |
-|------|-------------|-----------|
-| **shape** | Structural comparability gate — can two CSVs be compared? | `shape old.csv new.csv --key loan_id --json` |
-| **rvl** | Material change detector — which cells explain the difference? | `rvl old.csv new.csv --key loan_id --json` |
-| **canon** | Entity resolution against versioned registries | `canon data.csv --registry reg/ --column id` |
+### L4–L5: Comparability, Diff, Constraints & Identity
 
-Report tools default to human-readable output. Add `--json` for structured output.
+| Tool | Role | Key command |
+|------|------|-------------|
+| **shape** | Structural comparability gate — **always run before `rvl`** | `shape old.csv new.csv --key loan_id --json` |
+| **rvl** | Minimal material numeric change explanation (redacted by default) | `rvl old.csv new.csv --key loan_id --json` |
+| **verify** | Deterministic constraint evaluation with machine witnesses | `verify data.csv --rules rules.yaml --json` / `verify run constraints.verify.json --bind name=path` |
+| **canon** | Identity compiler: exact registry lookup (`canon <INPUT>`) + deterministic `canon entity` / `canon geo` workbenches | `canon positions.csv --registry reg/ --column cusip --json` |
+| **decoding** | Deterministic resolution of conflicting claims into canonical outputs | `decoding --describe` |
 
-### Zero-retention output
+### L6–L7: Scoring, Policy Decisions & Sealing
 
-`shape` and `rvl` redact identifying metadata and raw values by default. Keep
-that default for logs, triage, and shared artifacts. Pass `--explicit` only when
-the output is authorized to expose those details: `shape --explicit` permits
-column names and other identifying metadata, while `rvl --explicit` permits raw
-data values. `shape` supports `--profile` and `--profile-id` for structural
-scoping. Its `--lock`, `--max-rows`, and `--max-bytes` flags are reserved in v0
-and do not gate runtime behavior yet. `rvl` supports `--profile` and
-`--profile-id`, but does not accept `--lock`.
+| Tool | Role | Key command |
+|------|------|-------------|
+| **benchmark** | Gold-set scoring against frozen assertions | `benchmark normalized.csv --assertions gold.jsonl --key id --json` |
+| **assess** | Deterministic `PROCEED` / `PROCEED_WITH_RISK` / `ESCALATE` / `BLOCK` verdict over evidence artifacts | `assess shape.json rvl.json verify.json --policy policy.yaml --json` |
+| **pack** | Seals lockfiles, reports, and manifests into content-addressed, offline-verifiable bundles | `pack seal *.json --note "..." --output evidence/` / `pack verify` |
 
-### Lifecycle tools
+### Orthogonal Plane A: Privacy & Model-Boundary Enforcement
 
-| Tool | What it does | Key flags |
-|------|-------------|-----------|
-| **profile** | Column-scoping configs for report tools (draft → frozen lifecycle) | `profile draft init data.csv` `profile freeze` `profile suggest-key` |
-| **pack** | Evidence sealing — bundles lockfiles and reports into content-addressed packs | `pack seal *.json --note "..." --output dir/` |
+| Tool | Role | Key command |
+|------|------|-------------|
+| **veil** | Host-side ingress read guard: blocks raw sensitive file reads & raw-dump flags, steers to authorized metadata-safe spine tools | `veil --robot-triage` / `veil operator --json` / `veil doctor health --json` |
+| **airlock** | Model-boundary egress proof: assembles provenance-mapped prompts and emits verifiable boundary manifests (`BOUNDARY_FAILED < RAW_DOCUMENT_ABSENT < STRICT_TELEMETRY_ONLY`) | `airlock assemble ...` / `airlock verify ...` / `airlock explain --manifest ...` |
 
-### Validation / scoring / decision tools
+### Orthogonal Plane B: Counterfactual Simulation
 
-| Tool | What it does | Key flags |
-|------|-------------|-----------|
-| **verify** | Constraint checks against authored or compiled rules | `verify data.csv --rules rules.yaml --json` `verify run constraints.verify.json --bind name=path` |
-| **benchmark** | Gold-set scoring against expected facts | `benchmark normalized.csv --assertions gold_set.jsonl --key comp_id --json` |
-| **assess** | Deterministic PROCEED / PROCEED_WITH_RISK / ESCALATE / BLOCK classification over evidence artifacts | `assess shape.json rvl.json verify.json --policy policy.yaml --json` |
-
-`compare` remains a deferred exhaustive diff tool on the roadmap.
+| Tool | Role | Key command |
+|------|------|-------------|
+| **twinning** | Wire-compatible ephemeral Postgres/REST database twin with ms reset, snapshot overlays, and embedded `verify` | `twinning --robot-triage` / `twinning postgres --schema schema.sql` |
 
 ---
 
-## Universal conventions
+## Universal Agent Contracts
 
-### Exit codes (every tool)
+### 1. Exit Code Trinity (Every Tool)
 
-| Code | Meaning |
-|------|---------|
-| `0` | Positive / clean (no change, compatible, pass, all matched) |
-| `1` | Domain-negative (change detected, incompatible, fail, partial) |
-| `2` | Refusal — tool cannot operate, with structured reason |
+| Code | Meaning | Agent Action |
+|------|---------|--------------|
+| `0` | Clean / positive (compatible, no change, pass, all matched) | Proceed to next layer |
+| `1` | Domain-negative (incompatible, change detected, fail, partial) | Inspect structured JSON findings; do not skip gates (e.g., do not run `rvl` if `shape` exited `1`) |
+| `2` | **Refusal** (not a crash — the tool refuses to guess) | Execute `next_command` directly if non-null; otherwise use `detail` to adjust inputs/profile |
 
-### Refusals are not errors
+### 2. Refusals Teach Recovery
 
-A refusal means the tool is being honest: it cannot produce a confident answer. Every refusal includes:
+Every exit-`2` refusal emits a structured envelope:
 
 ```json
 {
@@ -91,272 +116,123 @@ A refusal means the tool is being honest: it cannot produce a confident answer. 
 }
 ```
 
-- `code` — stable machine identifier (`E_UPPERCASE`)
-- `detail` — structured context you can inspect
-- `next_command` — literal shell command to retry (when mechanical recovery is possible)
+- **Mechanical recovery (`next_command != null`):** Run it directly. No guessing.
+- **Judgment recovery (`next_command == null`):** Inspect `detail` and refine scope (e.g., exclude high-missingness columns via `profile` or add a missing upstream stage).
 
-**Mechanical recovery:** If `next_command` is present, execute it directly. No reasoning needed.
+### 3. Read-Only Self-Discovery (Zero Guesswork)
 
-**Judgment recovery:** If `next_command` is null, the refusal requires you to interpret `detail` and decide. Example: `E_MISSINGNESS` on a column — you decide whether to exclude it via a profile edit.
-
-### Self-discovery (every tool)
+Before operating any unfamiliar installed binary, query its read-only machine contract:
 
 ```bash
-<tool> --describe    # Prints operator.json — full contract: args, options, exit codes, refusals
-<tool> --schema      # Prints JSON Schema for structured output
-<tool> --version     # Prints "<tool> <semver>"
+<tool> --robot-triage       # Fastest single-call health + capabilities + recommendations
+<tool> capabilities --json  # Stable command, flag, and side-effect contract
+<tool> robot-docs guide     # Compact agent quick reference
+<tool> --describe           # operator.v0 manifest (args, exit codes, refusals, pipeline position)
+<tool> --schema             # Output JSON Schema
+<tool> doctor health --json # Read-only installation/posture check (never run --fix without approval)
 ```
 
-Run `--describe` on any tool to learn its interface without reading docs. The refusals section tells you every failure mode and what to do about each one.
+Prefer the installed binary's `--describe` / `--robot-triage` output over memory when flags or refusal codes differ by version.
 
-### Read-only agent discovery
+### 4. Zero-Retention & Redaction Discipline
 
-Before operating an unfamiliar installed tool, use its read-only discovery
-surfaces:
+- `shape` and `rvl` redact identifying metadata and raw values **by default**. Keep that default for triage, logs, and shared artifacts.
+- Pass `--explicit` only when authorized (`shape --explicit` exposes column/key metadata; `rvl --explicit` exposes raw values). Under `veil`, raw-dump flags on protected files are blocked by policy.
+- `shape` supports `--profile` and `--profile-id` (its `--lock`, `--max-rows`, and `--max-bytes` flags are reserved in v0 and do not gate runtime behavior yet). `rvl` supports `--profile` and `--profile-id`, and does not accept `--lock`.
+- If `veil` blocks a direct read, run `veil operator --json` and use an authorized metadata-safe spine tool instead of attempting shell workarounds.
 
-```bash
-<tool> --robot-triage
-<tool> capabilities --json
-<tool> robot-docs guide
-<tool> --describe
-<tool> --schema
-<tool> doctor health --json
-```
+### 5. Canonical State Root & Witness Ledger
 
-Use `doctor health --json` when that tool exposes the `doctor` namespace. The
-triage, capabilities, robot-docs, doctor health, describe, and schema surfaces
-are for discovery and do not replace a data run. Do not use `doctor --fix`
-without explicit authorization. Prefer the installed tool's own output over
-memory when flags or refusal recovery differ by version.
-
-### State paths and witness ledger
-
-The canonical CMD+RVL state root is `~/.cmdrvl`. Tools with witness support
-append a content-addressed, hash-chained record to
-`~/.cmdrvl/state/witness/witness.jsonl` unless `--no-witness` is passed. Set
-`EPISTEMIC_WITNESS` to use an explicit witness ledger path. Frozen profile IDs
-resolve under `~/.cmdrvl/config/profile/profiles/`. A legacy
-`~/.epistemic/witness.jsonl` file is copied on first default use for migration;
-do not treat it as the primary write location.
-
-You can query the witness ledger:
-
-```bash
-<tool> witness query --since 2026-01-01 --json
-<tool> witness last --json
-```
-
-Suppress with `--no-witness` when benchmarking.
+- Canonical state root: `~/.cmdrvl`
+- Shared hash-chained witness ledger: `~/.cmdrvl/state/witness/witness.jsonl` (override with `EPISTEMIC_WITNESS`; suppress in benchmarks with `--no-witness`). Legacy `~/.epistemic/witness.jsonl` is migration input only.
+- Frozen profiles: `~/.cmdrvl/config/profile/profiles/`
+- Query witness history with `<tool> witness query --since 2026-01-01 --json` or `<tool> witness last --json`.
 
 ---
 
-## Common workflows
+## Core Composable Recipes
 
-### 1. Lock a data delivery
-
+### 1. Gate → Explain → Seal (Standard Change Audit)
 ```bash
-vacuum /data/2026-02/ | hashbytes | lock --dataset-id "feb-delivery" --as-of "2026-02-28" > feb.lock.json
-```
-
-You now have a tamper-evident snapshot of every file — path, size, hash, tool versions. Verify later with `lock verify feb.lock.json`.
-
-### 2. Identify document types in a corpus
-
-```bash
-vacuum /dataroom/ | hashbytes | fingerprint --fp argus-model.v1 --fp csv.v0 --fp xlsx.v0 > fp.jsonl
-```
-
-Each record now has `fingerprint.matched`, `fingerprint.assertions`, and `fingerprint.content_hash`. Filter matched vs unmatched:
-
-```bash
-jq 'select(.fingerprint.matched == true)' fp.jsonl    # Recognized
-jq 'select(.fingerprint.matched == false)' fp.jsonl   # Unknown
-```
-
-### 2b. Author and test a custom fingerprint (no compilation required)
-
-```bash
-# Learn a fingerprint from example files
-fingerprint infer ./cbre-appraisals/ --format markdown --id cbre-appraisal.v1 --out cbre.fp.yaml
-
-# Install the YAML definition for direct runtime evaluation
-mkdir -p ~/.fingerprint/definitions
-cp cbre.fp.yaml ~/.fingerprint/definitions/
-
-# Test it immediately — no compile step needed
-vacuum /dataroom/ | hashbytes | fingerprint --fp cbre-appraisal.v1 --diagnose
-
-# Iterate: edit the YAML, re-copy, re-test
-# When stable, compile for production performance:
-fingerprint compile cbre.fp.yaml --out fingerprint-cbre-v1/
-```
-
-### 3. Compare two datasets and explain changes
-
-```bash
-# Gate: are these structurally comparable?
-shape nov.csv dec.csv --key loan_id --json > shape.json
-
-# Explain: what actually changed?
+vacuum /data/nov/ | hashbytes | lock --dataset-id "nov" > nov.lock.json
+vacuum /data/dec/ | hashbytes | lock --dataset-id "dec" > dec.lock.json
+shape nov.csv dec.csv --key loan_id --json > shape.json        # must exit 0 before rvl
 rvl nov.csv dec.csv --key loan_id --json > rvl.json
+assess shape.json rvl.json --policy policy.yaml --json > assess.json
+pack seal nov.lock.json dec.lock.json shape.json rvl.json assess.json \
+  --note "Nov->Dec reconciliation" --output evidence/2026-02/
+pack verify evidence/2026-02/
 ```
 
-If `shape` returns exit `1` (INCOMPATIBLE), do not run `rvl` — the datasets are not comparable. Read `shape.json` for why.
-
-If `rvl` returns exit `2` (REFUSAL), read the refusal. Common case: `E_NEED_KEY` → retry with `--key`. Another: `E_MISSINGNESS` → a column is mostly null, consider excluding it with a profile.
-
-### 4. Profile-scoped analysis (iterate, then freeze)
-
+### 2. Draft → Lint → Freeze a Comparison Lens (`profile`)
 ```bash
-# Generate a draft profile from a real dataset
 profile draft init tape.csv --out tape.draft.yaml
-
-# Suggest a key column
 profile suggest-key tape.csv --json
-
-# Edit the draft: set key, remove noisy columns
-# (you edit the YAML)
-
-# Lint against the real data
 profile lint tape.draft.yaml --against tape.csv
-
-# Run rvl with the draft to see if the answer is useful
 rvl old.csv new.csv --key loan_id --profile tape.draft.yaml --json
-
-# If useful, freeze for production
 profile freeze tape.draft.yaml --family csv.loan_tape.core --version 0 \
   --out profiles/csv.loan_tape.core.v0.yaml
 ```
 
-Drafts are mutable scratchpads. Frozen profiles are immutable, hashed, recorded in outputs. Explore with drafts, commit with frozen.
-
-`shape` and `rvl` are profile-aware today. `shape --profile`/`--profile-id`
-scope structural checks; `rvl --profile`/`--profile-id` affect key derivation
-and column scoping. `compare` remains deferred. Do not infer an `rvl --lock`
-flag from `shape`; `rvl` does not accept it in the current release line.
-
-### 5. Seal evidence
-
+### 3. Author & Test a Custom Fingerprint (No Compile Needed)
 ```bash
-pack seal nov.lock.json dec.lock.json shape.json rvl.json \
-  --note "Nov→Dec reconciliation" --output evidence/2026-02/
+fingerprint infer ./samples/ --format markdown --id doc.v1 --out doc.fp.yaml
+mkdir -p ~/.fingerprint/definitions && cp doc.fp.yaml ~/.fingerprint/definitions/
+vacuum /dataroom/ | hashbytes | fingerprint --fp doc.v1 --diagnose
+fingerprint compile doc.fp.yaml --out fingerprint-doc-v1/   # optional production compile
 ```
 
-The pack is a self-hashed directory. Every member is content-addressed. Verify with `pack verify evidence/2026-02/`.
-
-### 6. Entity resolution
-
+### 4. Entity Resolution (`canon`)
 ```bash
 canon positions.csv --registry registries/cusip-isin/ --column cusip --json
 ```
+Exit `0` = all resolved; exit `1` = partial (inspect `.unresolved[]`). Use `canon entity` / `canon geo` workbenches to compile messy local evidence into audited, versioned registries — never fuzzy-match inside production lookup.
 
-Exit `0` = all resolved. Exit `1` = partial (check `.unresolved[]`). Every mapping records `rule_id` and `registry.version` for audit.
-
----
-
-## Refusal recovery cheat sheet
-
-| Refusal | Tool | What to do |
-|---------|------|-----------|
-| `E_NEED_KEY` | rvl, shape | Retry with `--key <suggested_key>` from `detail` |
-| `E_DIFFUSE` | rvl | Top contributors don't reach threshold — lower `--threshold` or scope with `--profile` |
-| `E_MISSINGNESS` | rvl | Column is mostly null — edit profile to exclude it |
-| `E_NO_NUMERIC` | rvl | No numeric columns found — check data or scope with `--profile` |
-| `E_UNKNOWN_FP` | fingerprint | Fingerprint ID not installed — `fingerprint --list` to see available |
-| `E_BAD_INPUT` | hashbytes, fingerprint, lock | Upstream tool didn't run — check pipeline order |
-| `E_COLUMN_NOT_FOUND` | canon, profile | Column name doesn't exist in input — check spelling |
-| `E_TOO_LARGE` | shape, rvl | Input exceeds `--max-rows`/`--max-bytes` — increase limit or split |
-| `E_AMBIGUOUS_PROFILE` | shape, rvl | Both `--profile` and `--profile-id` given — use one |
-
-When `next_command` is present in the refusal envelope, execute it. When it's null, apply judgment.
-
----
-
-## Schema and contract discovery
-
-Every tool carries its own contract. You never need external documentation.
-
+### 5. Safe Model-Boundary Attestation (`airlock`)
 ```bash
-# Full contract for any tool
-rvl --describe | jq .
-
-# What refusals can rvl produce and what to do about each?
-rvl --describe | jq '.refusals[] | {code, action, message}'
-
-# What does rvl's output look like?
-rvl --schema | jq .
-
-# What tools does fingerprint expect upstream?
-fingerprint --describe | jq '.pipeline'
-
-# What fingerprints are available?
-fingerprint --list
+airlock assemble --policy rules.yaml --input telemetry.json \
+  --out prompt.json --provenance-out provenance.json
+airlock verify --policy rules.yaml --prompt prompt.json --provenance provenance.json \
+  --request request.json --out manifest.json --require-claim RAW_DOCUMENT_ABSENT
+airlock explain --manifest manifest.json --json
 ```
 
-### Output schema versions
+---
 
-Every structured output has a `version` field. Parse it to know the shape:
+## Refusal Recovery Cheat Sheet
 
-| Version | Tool | Output mode |
-|---------|------|-------------|
-| `vacuum.v0` | vacuum | JSONL stream |
-| `hash.v0` | hashbytes | JSONL stream |
-| `fingerprint.v0` | fingerprint | JSONL stream |
-| `lock.v0` | lock | JSON artifact |
-| `shape.v0` | shape | JSON report (`--json`) |
-| `rvl.v0` | rvl | JSON report (`--json`) |
-| `canon.v0` | canon | JSON artifact |
-| `pack.v0` | pack | JSON manifest |
+| Refusal | Tool | Recovery |
+|---------|------|----------|
+| `E_NEED_KEY` | `rvl`, `shape` | Retry with `--key <suggested_key>` from `detail` |
+| `E_DIFFUSE` | `rvl` | Lower `--threshold` or scope noisy columns with `--profile` |
+| `E_MISSINGNESS` | `rvl` | Exclude high-null column via `profile` |
+| `E_NO_NUMERIC` | `rvl` | Verify input columns or scope with `--profile` |
+| `E_UNKNOWN_FP` | `fingerprint` | Run `fingerprint --list` to check installed definitions |
+| `E_BAD_INPUT` | `hashbytes`, `fingerprint`, `lock` | Check upstream JSONL pipeline order |
+| `E_COLUMN_NOT_FOUND` | `canon`, `profile` | Check column spelling against `shape` / `profile draft init` |
+| `E_TOO_LARGE` | `shape`, `rvl` | Increase `--max-rows`/`--max-bytes` or partition input |
+| `E_AMBIGUOUS_PROFILE` | `shape`, `rvl` | Pass either `--profile` or `--profile-id`, not both |
 
 ---
 
-## What these tools are not
-
-These tools are the **data layer**. They establish provenance, identity, comparability, and change. They do not:
-
-- **Orchestrate workflows** — you decide what to run and in what order
-- **Store data** — tools are stateless; they read files and emit structured output
-- **Extract or parse documents** — fingerprint recognizes templates, it doesn't OCR or transform data
-- **Make decisions** — tools produce deterministic facts; you (or `assess`) interpret them
-- **Require a network** — everything runs locally, no APIs, no cloud
-
-You bring the orchestration. These tools bring the facts.
-
----
-
-## Install
+## Install (Homebrew)
 
 ```bash
-# Core provenance / comparison set via Homebrew
 brew install cmdrvl/tap/vacuum
-brew install cmdrvl/tap/cmdrvl-hash   # installs the `hashbytes` binary
+brew install cmdrvl/tap/cmdrvl-hash        # installs `hashbytes`
 brew install cmdrvl/tap/fingerprint
 brew install cmdrvl/tap/profile
 brew install cmdrvl/tap/lock
 brew install cmdrvl/tap/shape
 brew install cmdrvl/tap/rvl
 brew install cmdrvl/tap/verify
-brew install cmdrvl/tap/cmdrvl-benchmark   # installs the `benchmark` binary
+brew install cmdrvl/tap/cmdrvl-benchmark   # installs `benchmark`
 brew install cmdrvl/tap/assess
 brew install cmdrvl/tap/canon
 brew install cmdrvl/tap/pack
+brew install cmdrvl/tap/twinning
 brew install cmdrvl/tap/veil
 brew install cmdrvl/tap/airlock
 ```
 
-Verify:
-```bash
-vacuum --version && hashbytes --version && fingerprint --version && \
-profile --version && lock --version && shape --version && \
-rvl --version && verify --version && benchmark --version && \
-assess --version && canon --version && pack --version && \
-veil --version && airlock --version
-```
-
-`vacuum` also installs `s3-to-vacuum` for turning S3 object listings into the
-same deterministic manifest stream.
-
-## Links
-
-- [github.com/cmdrvl](https://github.com/cmdrvl) — all repos, all MIT
-- Each tool: `<tool> --describe` for the full machine-readable contract
+`vacuum` also installs `s3-to-vacuum`. See [github.com/cmdrvl](https://github.com/cmdrvl) and [`cmdrvl/cmdrvl`](https://github.com/cmdrvl/cmdrvl) for the unified system architecture and porcelain CLI roadmap.
