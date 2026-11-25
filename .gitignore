@@ -1,4 +1,4 @@
 
-# br writes a timestamped backup here on every --force flush (see the beads
-# hooks in cmdrvl-cli/scripts/beads-hooks). Local safety net, not shared state.
-.beads/.br_history/
+# This repo has no bead tracker (removed 2026-11-24; work is tracked in the
+# repos that own the code). Keep any stray local .beads state out of git.
+.beads/
