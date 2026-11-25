@@ -17,6 +17,7 @@ vacuum → hashbytes → fingerprint → lock
 | Tool | What it does | Key flags |
 |------|-------------|-----------|
 | **vacuum** | Scans directories, emits sorted JSONL manifest (path, size, mtime, mime) | `vacuum <DIR>...` `--include` `--exclude` |
+| **s3-to-vacuum** | Converts an S3 object listing into the `vacuum.v0` JSONL manifest format | `s3-to-vacuum s3://bucket/prefix/` |
 | **hashbytes** | Adds SHA-256 or BLAKE3 byte identity to each record | `--algorithm blake3` |
 | **fingerprint** | Tests each artifact against template definitions, produces content hashes | `--fp <ID>` (repeatable, first match wins) `--list` `--diagnose`. YAML definitions in `~/.fingerprint/definitions/` run directly without compilation (override with `FINGERPRINT_DEFINITIONS`). |
 | **lock** | Pins the stream into a self-hashed, tamper-evident lockfile | `--dataset-id` `--as-of` `--note` |
@@ -36,6 +37,17 @@ vacuum /data/delivery/ | hashbytes | fingerprint --fp csv.v0 | lock --dataset-id
 | **canon** | Entity resolution against versioned registries | `canon data.csv --registry reg/ --column id` |
 
 Report tools default to human-readable output. Add `--json` for structured output.
+
+### Zero-retention output
+
+`shape` and `rvl` redact identifying metadata and raw values by default. Keep
+that default for logs, triage, and shared artifacts. Pass `--explicit` only when
+the output is authorized to expose those details: `shape --explicit` permits
+column names and other identifying metadata, while `rvl --explicit` permits raw
+data values. `shape` supports `--profile` and `--profile-id` for structural
+scoping. Its `--lock`, `--max-rows`, and `--max-bytes` flags are reserved in v0
+and do not gate runtime behavior yet. `rvl` supports `--profile` and
+`--profile-id`, but does not accept `--lock`.
 
 ### Lifecycle tools
 
@@ -97,9 +109,37 @@ A refusal means the tool is being honest: it cannot produce a confident answer. 
 
 Run `--describe` on any tool to learn its interface without reading docs. The refusals section tells you every failure mode and what to do about each one.
 
-### Witness ledger
+### Read-only agent discovery
 
-Every tool appends a ~300-byte record to `~/.epistemic/witness.jsonl` — content-addressed, hash-chained. This happens automatically. You can query it:
+Before operating an unfamiliar installed tool, use its read-only discovery
+surfaces:
+
+```bash
+<tool> --robot-triage
+<tool> capabilities --json
+<tool> robot-docs guide
+<tool> --describe
+<tool> --schema
+<tool> doctor health --json
+```
+
+Use `doctor health --json` when that tool exposes the `doctor` namespace. The
+triage, capabilities, robot-docs, doctor health, describe, and schema surfaces
+are for discovery and do not replace a data run. Do not use `doctor --fix`
+without explicit authorization. Prefer the installed tool's own output over
+memory when flags or refusal recovery differ by version.
+
+### State paths and witness ledger
+
+The canonical CMD+RVL state root is `~/.cmdrvl`. Tools with witness support
+append a content-addressed, hash-chained record to
+`~/.cmdrvl/state/witness/witness.jsonl` unless `--no-witness` is passed. Set
+`EPISTEMIC_WITNESS` to use an explicit witness ledger path. Frozen profile IDs
+resolve under `~/.cmdrvl/config/profile/profiles/`. A legacy
+`~/.epistemic/witness.jsonl` file is copied on first default use for migration;
+do not treat it as the primary write location.
+
+You can query the witness ledger:
 
 ```bash
 <tool> witness query --since 2026-01-01 --json
@@ -190,7 +230,10 @@ profile freeze tape.draft.yaml --family csv.loan_tape.core --version 0 \
 
 Drafts are mutable scratchpads. Frozen profiles are immutable, hashed, recorded in outputs. Explore with drafts, commit with frozen.
 
-Today `rvl` is profile-aware. Check `shape` / `compare` operator surfaces before assuming equivalent `--profile` behavior in the current release line.
+`shape` and `rvl` are profile-aware today. `shape --profile`/`--profile-id`
+scope structural checks; `rvl --profile`/`--profile-id` affect key derivation
+and column scoping. `compare` remains deferred. Do not infer an `rvl --lock`
+flag from `shape`; `rvl` does not accept it in the current release line.
 
 ### 5. Seal evidence
 
@@ -222,7 +265,6 @@ Exit `0` = all resolved. Exit `1` = partial (check `.unresolved[]`). Every mappi
 | `E_UNKNOWN_FP` | fingerprint | Fingerprint ID not installed — `fingerprint --list` to see available |
 | `E_BAD_INPUT` | hashbytes, fingerprint, lock | Upstream tool didn't run — check pipeline order |
 | `E_COLUMN_NOT_FOUND` | canon, profile | Column name doesn't exist in input — check spelling |
-| `E_INPUT_NOT_LOCKED` | shape, rvl | `--lock` was provided but input file isn't in the lockfile |
 | `E_TOO_LARGE` | shape, rvl | Input exceeds `--max-rows`/`--max-bytes` — increase limit or split |
 | `E_AMBIGUOUS_PROFILE` | shape, rvl | Both `--profile` and `--profile-id` given — use one |
 
