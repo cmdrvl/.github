@@ -1,10 +1,10 @@
 # CMD+RVL
 
-**Deterministic Rust infrastructure for verifiable data, document, and AI agent workflows.**
+**Deterministic Rust verification for data, documents, and AI agents.**
 
-One `#![forbid(unsafe_code)]` Rust verification core, two runtimes: run locally as composable **CLI tools** for engineers and AI agents, or compile to **Browser WebAssembly (`@cmdrvl/web`)** for zero-upload verification inside static webpages, internal tools, and Claude Artifacts.
+AI models are strong at orchestration and weak at silent math, schema drift, byte-accurate citations, and data boundaries. CMD+RVL moves diffs, quote grounding, schema gates, PII boundaries, and evidence sealing into deterministic, offline-verifiable Rust backed by versioned artifacts (profiles, rules, registries, lockfiles, and sealed evidence packs).
 
-AI models are strong at orchestration and weak at silent math, schema drift, byte-accurate citations, and data boundaries. CMD+RVL keeps the model at the edges while moving diffs, quote grounding, schema gates, PII boundaries, and evidence sealing into deterministic, offline-verifiable Rust backed by versioned artifacts (profiles, rules, registries, lockfiles, and sealed evidence packs).
+It runs two ways: locally as **CLI tools** for engineers and AI agents, or directly in a **browser tab** ([`@cmdrvl/web`](https://github.com/cmdrvl/web)) with zero server and zero file uploads.
 
 ---
 
