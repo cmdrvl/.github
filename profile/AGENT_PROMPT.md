@@ -66,7 +66,8 @@ vacuum /data/delivery/ | hashbytes | fingerprint --fp csv.v0 | lock --dataset-id
 |------|------|-------------|
 | **shape** | Structural comparability gate — **always run before `rvl`** | `shape old.csv new.csv --key loan_id --json` |
 | **rvl** | Minimal material numeric change explanation (redacted by default) | `rvl old.csv new.csv --key loan_id --json` |
-| **verify** | Deterministic constraint evaluation with machine witnesses | `verify data.csv --rules rules.yaml --json` / `verify run constraints.verify.json --bind name=path` |
+| **redline** | Prose/HTML byte-span diff separating semantic edits from formatting noise (redacted by default) | `redline old.htm new.htm --json` |
+| **verify** | Deterministic constraint evaluation (`verify run`) and verbatim quote/scale grounding (`verify ground`) | `verify data.csv --rules rules.yaml --json` / `verify run constraints.verify.json --bind name=path` |
 | **canon** | Identity compiler: exact registry lookup (`canon <INPUT>`) + deterministic `canon entity` / `canon geo` workbenches | `canon positions.csv --registry reg/ --column cusip --json` |
 | **decoding** | Deterministic resolution of conflicting claims into canonical outputs | `decoding --describe` |
 
@@ -235,4 +236,4 @@ brew install cmdrvl/tap/veil
 brew install cmdrvl/tap/airlock
 ```
 
-`vacuum` also installs `s3-to-vacuum`. See [github.com/cmdrvl](https://github.com/cmdrvl) and [`cmdrvl/cmdrvl`](https://github.com/cmdrvl/cmdrvl) for the unified system architecture and porcelain CLI roadmap.
+`vacuum` also installs `s3-to-vacuum`. For browser-side zero-upload verification (`verify ground`, `redline`, `SHA-256`, `BLAKE3`) in static sites or Claude Artifacts, see [`cmdrvl/web`](https://github.com/cmdrvl/web). See [github.com/cmdrvl](https://github.com/cmdrvl) and [`cmdrvl/cmdrvl`](https://github.com/cmdrvl/cmdrvl) for the unified system architecture and porcelain CLI roadmap.
