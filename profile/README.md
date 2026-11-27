@@ -10,19 +10,19 @@ It runs two ways: locally as **CLI tools** for engineers and AI agents, or direc
 
 ## What You Can Do With CMD+RVL
 
-- **Let your team build Claude Artifacts and custom AI tools on top of approved verification.** Instead of trusting LLM-written math inside ad-hoc apps, approve one zero-network browser engine ([`@cmdrvl/web`](https://github.com/cmdrvl/web)). Analysts and AI can build custom views or Claude Artifacts for every workflow while every hash, quote check, and redline comes from the same audited Rust code.
-- **Read and diff hundreds of SEC filings, contracts, or data tapes in seconds without burning LLM tokens.** [`redline`](https://github.com/cmdrvl/redline) compares two 5.5 MB 10-K filings in about half a second, strips CSS and reflow noise, and flags only real numeric and clause changes with exact original byte offsets. [`rvl`](https://github.com/cmdrvl/rvl) checks 50,000+ spreadsheet or database cells and isolates the handful of rows explaining >=95% of movement, while [`shape`](https://github.com/cmdrvl/shape) stops incomparable files before bad math runs.
+- **Let your team build Claude Artifacts and custom AI tools on top of approved verification.** Instead of trusting LLM-written math inside ad-hoc apps, standardize on one zero-network browser engine ([`@cmdrvl/web`](https://github.com/cmdrvl/web)). Analysts and AI can build custom views or Claude Artifacts for every workflow while every hash, quote check, and redline comes from the same auditable, `#![forbid(unsafe_code)]` Rust code.
+- **Read and diff hundreds of SEC filings, contracts, or data tapes in seconds without burning LLM tokens.** [`redline`](https://github.com/cmdrvl/redline) compares two 5.5 MB 10-K filings in about half a second, strips CSS and reflow noise, and flags only real numeric and clause changes with exact original byte offsets. [`rvl`](https://github.com/cmdrvl/rvl) checks large spreadsheets or database exports and isolates the smallest set of cells explaining >=95% of unscaled numeric movement (best used on single-unit tables or columns scoped via `--profile`), while [`shape`](https://github.com/cmdrvl/shape) stops incomparable files before bad math runs.
 - **Publish research and AI reports readers can verify themselves, even offline.** Ship a static page or interactive report backed by `@cmdrvl/web`: every quoted passage and number checks locally in the reader's browser, and readers can drop their own copy of the source filing into the tab to prove nothing was edited.
-- **Let AI agents work on confidential files without ever seeing the raw data.** [`veil`](https://github.com/cmdrvl/veil) blocks coding agents from opening or printing sensitive files (`Read`, `Grep`, `Bash`) while letting them run local verification tools that return only verdicts and redacted summaries. [`airlock`](https://github.com/cmdrvl/airlock) creates a cryptographic manifest proving what crossed into the model. In web mode, files never leave the user's browser tab at all.
+- **Keep raw confidential files out of agent prompts by default.** [`veil`](https://github.com/cmdrvl/veil) uses advisory, parser-based tool hooks to block coding agents from opening or printing protected paths (`Read`, `Grep`, `Bash`) while letting them run local verification tools that return only verdicts and redacted summaries (see `veil`'s published bypass matrix for hook-only boundaries). [`airlock`](https://github.com/cmdrvl/airlock) writes a locally signed Ed25519 manifest recording the exact payload bytes that crossed into a model so post-signing edits are detectable. In web mode, files never leave the user's browser tab at all.
 - **Rehearse AI queries and migrations locally before touching production.** [`twinning`](https://github.com/cmdrvl/twinning) runs fast local twins of Postgres, Snowflake, REST APIs, and MCP servers with millisecond resets, embedded rule checks, and migration equivalence proofs.
 - **Crowdsource your company brain without moving your data.** Every time a team member or agent cracks a messy file format, maps an entity identifier, scopes noisy columns, or writes a business check, [`fingerprint`](https://github.com/cmdrvl/fingerprint), [`canon`](https://github.com/cmdrvl/canon), [`profile`](https://github.com/cmdrvl/profile), [`verify`](https://github.com/cmdrvl/verify), and [`assess`](https://github.com/cmdrvl/assess) capture that institutional knowledge as small, versioned metadata artifacts (templates, key mappings, lenses, and rules). Your organization accumulates shared business logic while raw client and financial files stay where they already live.
-- **Hand auditors a portable receipt that still verifies offline years later.** [`lock`](https://github.com/cmdrvl/lock) and [`pack`](https://github.com/cmdrvl/pack) bundle exact input hashes, rules, profiles, and verdicts into one content-addressed folder that anyone can verify offline with `pack verify` (no server, no account, no vendor lock-in).
+- **Hand auditors a portable receipt that still verifies offline years later.** [`lock`](https://github.com/cmdrvl/lock) and [`pack`](https://github.com/cmdrvl/pack) bundle exact input hashes, rules, profiles, and verdicts into one content-addressed folder that anyone holding the pinned `pack_id` can verify offline with `pack verify` (no server, no account, no vendor lock-in).
 
 ---
 
 ## Choose Your Mode: Web (Browser) vs. CLI
 
-Both modes run the exact same compiled Rust verification code and emit the same JSON schemas. Pick the mode that fits where your files live.
+Both modes run the same compiled Rust verification crates and emit the same JSON schemas (in browser mode, `lock.v0` input pinning is optional for ad-hoc drag-and-drop checks, whereas the `verify ground` CLI requires `--lock`). Pick the mode that fits where your files live.
 
 | If you want to... | Use | How it runs |
 |---|---|---|
@@ -69,18 +69,18 @@ SHAPE  INCOMPATIBLE
 
 $ rvl old.csv new.csv --key id --explicit
 RVL    REAL CHANGE
-  Checked: 4,183 rows, 12 numeric columns (50,196 cells)
+  Checked: 1,003 rows, 3 numeric columns (3,009 cells)
   3 cells explain 95.2% of total numeric change (threshold 95.0%):
-    1. NVDA.market_value  +1842100  (123 -> 1842223)
-    2. UST10Y.price       -0.37     (4.21 -> 3.84)
-    3. EURUSD.fx_rate     +0.0013   (1.0842 -> 1.0855)
+    1. NVDA.market_value_usd  +1.12e6  (4,250,000 -> 5,370,000)
+    2. MSFT.market_value_usd  -5.1e5   (3,890,000 -> 3,380,000)
+    3. AAPL.cost_basis_usd    +274000  (1,920,000 -> 2,194,000)
 
 $ pack verify evidence/2026-q4/
-pack verify: OK                             # content-addressed, verified offline
+pack verify: OK                             # content-addressed; compare pack_id offline
   pack_id: sha256:71cd27ee3a69cf0e...
 ```
 
-When files are sensitive, [`veil`](https://github.com/cmdrvl/veil) enforces the read boundary while still letting the agent run verification tools:
+When files are sensitive, [`veil`](https://github.com/cmdrvl/veil) acts as an advisory hook-based read guard while still letting the agent run verification tools:
 
 ```text
 BLOCK:  cat client_tape.csv             -> raw bytes would enter model context
@@ -132,8 +132,8 @@ Keep raw sensitive files out of LLM prompts, and prove what crossed the model bo
 
 | Tool | What it does |
 |------|-------------|
-| **[veil](https://github.com/cmdrvl/veil)** | Preventive read-boundary guard that blocks direct agent reads (`Read`, `Grep`, `Bash`) of sensitive files while allowing authorized metadata-safe local tools |
-| **[airlock](https://github.com/cmdrvl/airlock)** | Cryptographic model-boundary attestation emitting proof manifests of the exact fragments and claim levels (`RAW_DOCUMENT_ABSENT`, `STRICT_TELEMETRY_ONLY`) that crossed into a model |
+| **[veil](https://github.com/cmdrvl/veil)** | Advisory, hook-based read-boundary guard that blocks direct agent reads (`Read`, `Grep`, `Bash`) of protected paths while allowing authorized metadata-safe local tools (includes a published bypass matrix) |
+| **[airlock](https://github.com/cmdrvl/airlock)** | Model-boundary manifest emitter that records and locally Ed25519-signs the exact payload fragments and claim levels (`RAW_DOCUMENT_ABSENT`, `STRICT_TELEMETRY_ONLY`) sent across a model boundary |
 | **[boundary-detectors](https://github.com/cmdrvl/boundary-detectors)** | Shared `#![forbid(unsafe_code)]` pure-Rust detectors (secrets, PII, tabular dumps, blobs with recursive base64/hex decode, paths, magic bytes, and one-way shingle Bloom filters) powering `veil` and `airlock` |
 
 ### 4. Wire-Protocol SDLC Twins
@@ -179,7 +179,6 @@ Typical CLI pipeline: `shape` -> `rvl` / `verify` / `benchmark` -> `assess` -> `
 | **[cmdrvl-xew](https://github.com/cmdrvl/cmdrvl-xew)** | Detects enforcement-fragile XBRL patterns in SEC filings and emits reproducible Evidence Packs |
 | **[edgar-change-interpreter](https://github.com/cmdrvl/edgar-change-interpreter)** | Claude skill for spotting material changes, silent risks, and interpretation traps in SEC 10-K/10-Q/8-K filings |
 | **[edgar-fabric-ingest](https://github.com/cmdrvl/edgar-fabric-ingest)** | TypeScript reference CLI for ingesting EDGAR disclosures into an append-only CQRS context layer |
-| **[knownby](https://github.com/cmdrvl/knownby)** | Point-in-time financial facts benchmark and citation evals |
 | **[regret](https://github.com/cmdrvl/regret)** | Mines git history for high-precision swarm rework signals: reverts, linked fixes, and patch-id matches |
 | **[homebrew-tap](https://github.com/cmdrvl/homebrew-tap)** | Homebrew formulae and bottles for CMD+RVL CLI binaries |
 
