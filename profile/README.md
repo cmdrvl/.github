@@ -8,32 +8,33 @@ It runs two ways: locally as **CLI tools** for engineers and AI agents, or direc
 
 ---
 
-## Choose Your Mode: Web (WASM) vs. CLI
+## What You Can Do With CMD+RVL
 
-Both modes execute the same compiled Rust verification code and emit the same JSON schemas. Pick the runtime that fits where the data lives.
+- **Let your team build Claude Artifacts and custom AI tools on top of approved verification.** Instead of trusting LLM-written math inside ad-hoc apps, approve one zero-network browser engine ([`@cmdrvl/web`](https://github.com/cmdrvl/web)). Analysts and AI can build custom views or Claude Artifacts for every workflow while every hash, quote check, and redline comes from the same audited Rust code.
+- **Read and diff hundreds of SEC filings, contracts, or data tapes in seconds without burning LLM tokens.** [`redline`](https://github.com/cmdrvl/redline) compares two 5.5 MB 10-K filings in about half a second, strips CSS and reflow noise, and flags only real numeric and clause changes with exact original byte offsets. [`rvl`](https://github.com/cmdrvl/rvl) checks 50,000+ spreadsheet or database cells and isolates the handful of rows explaining >=95% of movement, while [`shape`](https://github.com/cmdrvl/shape) stops incomparable files before bad math runs.
+- **Publish research and AI reports readers can verify themselves, even offline.** Ship a static page or interactive report backed by `@cmdrvl/web`: every quoted passage and number checks locally in the reader's browser, and readers can drop their own copy of the source filing into the tab to prove nothing was edited.
+- **Let AI agents work on confidential files without ever seeing the raw data.** [`veil`](https://github.com/cmdrvl/veil) blocks coding agents from opening or printing sensitive files (`Read`, `Grep`, `Bash`) while letting them run local verification tools that return only verdicts and redacted summaries. [`airlock`](https://github.com/cmdrvl/airlock) creates a cryptographic manifest proving what crossed into the model. In web mode, files never leave the user's browser tab at all.
+- **Rehearse AI queries and migrations locally before touching production.** [`twinning`](https://github.com/cmdrvl/twinning) runs fast local twins of Postgres, Snowflake, REST APIs, and MCP servers with millisecond resets, embedded rule checks, and migration equivalence proofs.
+- **Hand auditors a portable receipt that still verifies offline years later.** [`lock`](https://github.com/cmdrvl/lock) and [`pack`](https://github.com/cmdrvl/pack) bundle exact input hashes, rules, profiles, and verdicts into one content-addressed folder that anyone can verify offline with `pack verify` (no server, no account, no vendor lock-in).
+
+---
+
+## Choose Your Mode: Web (Browser) vs. CLI
+
+Both modes run the exact same compiled Rust verification code and emit the same JSON schemas. Pick the mode that fits where your files live.
 
 | If you want to... | Use | How it runs |
 |---|---|---|
-| **Verify documents or diffs in a browser with zero file uploads** (static sites, interactive research, internal tools, Claude Artifacts) | **[`@cmdrvl/web`](https://github.com/cmdrvl/web)** | Compiled serial `wasm32-unknown-unknown` in the user's browser tab. Zero server, zero upload, works offline and in Safari with no `SharedArrayBuffer` or COOP/COEP headers. |
-| **Give an AI coding agent or CI pipeline deterministic local tools** (tabular diffs, schema gates, PII guards, local DB twins, offline evidence packs) | **[CLI Suite (`homebrew-tap`)](https://github.com/cmdrvl/homebrew-tap)** | Fast native Rust binaries installed via Homebrew. Self-describing JSON contracts, typed refusals with recovery commands, and zero-retention defaults. |
+| **Give analysts, clients, or readers zero-upload verification in a browser** (static pages, interactive research, internal tools, Claude Artifacts) | **[`@cmdrvl/web`](https://github.com/cmdrvl/web)** | Compiled serial WebAssembly in the user's browser tab. Zero server, zero upload, works offline and in Desktop/iPhone Safari with no special server headers. |
+| **Give an AI coding agent or CI pipeline deterministic local tools** (tabular diffs, schema gates, PII guards, local DB twins, offline evidence packs) | **[CLI Suite (`homebrew-tap`)](https://github.com/cmdrvl/homebrew-tap)** | Fast native Rust binaries via Homebrew. Self-describing JSON contracts, typed refusals with recovery commands, and zero-retention defaults. |
 | **Add 30-second verifiable CSV receipts to Claude Code, Codex, Gemini CLI, or Cursor** | **[`receipts`](https://github.com/cmdrvl/receipts)** | One-line skill installer wrapping `shape`, `rvl`, and `pack`. |
 | **Connect an agent to public and licensed financial/SEC datasets** | **[`mcp-servers`](https://cmdrvl.com/mcp-servers/)** | Hosted MCP servers paired with local verification and sealing. |
 
 ---
 
-## Why CMD+RVL Stands Out
-
-1. **Same verified Rust code in CLI and Browser WebAssembly (`cmdrvl/web`):** Browser mode wraps the real Rust verification crates (`verify-engine`, `redline`, `sha2`, `blake3`) directly rather than a JavaScript reimplementation. A reader can open a static report, disconnect Wi-Fi, drop their own copy of a source filing into the tab, and verify every quote span, numeric scale, `lock.v0` hash, and semantic redline locally. Teams can also let LLMs or analysts generate custom HTML views or Claude Artifacts while keeping all verification inside one audited, zero-network WASM binary.
-2. **Exact answers and byte-span receipts instead of LLM guesses:** [`shape`](https://github.com/cmdrvl/shape) blocks incomparable diffs before bad math runs; [`rvl`](https://github.com/cmdrvl/rvl) isolates the smallest set of numeric cells explaining >=95% of change; [`redline`](https://github.com/cmdrvl/redline) compares two 5.5 MB filings in about half a second while separating `numeric_changed` and `clause_added` from `formatting_only` and pointing at exact `[start, end)` byte ranges in the original files; [`verify`](https://github.com/cmdrvl/verify) checks declared invariants and grounds verbatim quotes + numeric scales (`verify ground`); [`pack`](https://github.com/cmdrvl/pack) seals content-addressed bundles anyone can verify offline years later (`pack verify`).
-3. **Zero-retention and zero-exfiltration by default:** `shape`, `rvl`, and `redline` redact raw values and document text unless `--explicit` is passed. [`veil`](https://github.com/cmdrvl/veil) blocks AI agents from directly reading sensitive files (`Read`, `Grep`, `Bash`) while allowing authorized local tools to run and return only verdicts. [`airlock`](https://github.com/cmdrvl/airlock) emits cryptographic boundary manifests (`RAW_DOCUMENT_ABSENT`, `STRICT_TELEMETRY_ONLY`) proving what crossed into a model. In browser WASM mode, user files never leave the browser tab.
-4. **Built for headless AI agents from day one:** Every CLI supports read-only self-discovery (`--robot-triage`, `capabilities --json`, `robot-docs guide`, `--describe`, `--schema`), a uniform 3-code exit contract (`0` clean, `1` domain-negative, `2` structured `E_UPPERCASE` refusal with a literal `next_command` when mechanical recovery exists), and ambient hash-chained provenance at `~/.cmdrvl/state/witness/witness.jsonl` (`--no-witness` to disable).
-5. **Local wire-protocol twins before touching production:** [`twinning`](https://github.com/cmdrvl/twinning) runs ephemeral local Postgres (`pgwire`), Snowflake (HTTP + Arrow IPC), OpenAPI 3.x REST, and MCP twins with millisecond resets, embedded `verify` checks, and `twinning proof twin-pair` migration equivalence receipts.
-
----
-
 ## What This Looks Like in Practice
 
-### In the Browser (`@cmdrvl/web` WASM, zero server / zero upload)
+### In the Browser (`@cmdrvl/web`, zero server / zero upload)
 
 ```js
 import init, { verify_ground_json, redline_compare } from "./pkg/cmdrvl_web.js";
@@ -87,6 +88,12 @@ ALLOW:  shape / rvl / verify / pack     -> subprocess runs locally; only verdict
 ```
 
 ---
+
+## Engineering Guarantees
+
+- **One `#![forbid(unsafe_code)]` Rust codebase for CLI and Web:** `@cmdrvl/web` wraps the real Rust verification crates (`verify-engine`, `redline`, `sha2`, `blake3`) in serial `wasm32-unknown-unknown` with no `SharedArrayBuffer` or COOP/COEP headers required.
+- **Built for headless AI agents:** Every CLI exposes `--robot-triage`, `capabilities --json`, `robot-docs guide`, `--describe`, and `--schema`, with a uniform 3-code exit contract (`0` clean, `1` domain-negative, `2` structured `E_UPPERCASE` refusal with a literal `next_command` when mechanical recovery exists).
+- **Zero-retention defaults and ambient provenance:** `shape`, `rvl`, and `redline` redact raw values and document text unless `--explicit` is passed; CLI runs record hash-chained receipts to `~/.cmdrvl/state/witness/witness.jsonl` (`--no-witness` to disable).
 
 ## Give This to Your Agent
 
