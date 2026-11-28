@@ -200,6 +200,57 @@ airlock explain --manifest manifest.json --json
 
 ---
 
+## Authored Input Shapes (Quick Reference)
+
+When authoring input files for `verify`, `benchmark`, or `assess`, use these exact shapes instead of guessing field names:
+
+### `verify ground` Claims JSONL (UTF-8 text, Markdown, or HTML documents)
+```json
+{"claim_id":"c1","source":"filing","quote":"cash totaled $41.2 million","value":41.2,"scale":"millions","unit":"USD"}
+{"claim_id":"c2","source":"filing","quote":"exact verbatim phrase","byte_span":{"start":120,"end":141}}
+```
+- Required fields: `claim_id` (unique), `source` (matches `--bind <NAME>=<DOCUMENT>`), `quote` (non-empty verbatim string).
+- Optional fields: `byte_span` (`{"start":N,"end":M}` object; if omitted, requires one unique normalized match in the document), and numeric group (`value` + `scale` required together; `unit` optional).
+- Supported `scale` values in `verify 0.7.x`: `units` (`unit`), `thousands` (`thousand`, `k`), `millions` (`million`, `m`), `percent` (`%`), `bps` (`bp`, `basis_points`). *(Note: `billions`/`trillions` document scale words are currently marked unsupported in `0.7.x`, so use quote-only grounding for figures written as `"$X billion"` until billion/trillion scale support lands.)*
+
+### `verify` Arity-1 Authoring YAML (`verify data.csv --rules rules.yaml --json`)
+```yaml
+constraint_set_id: my_suite.v1
+bindings:
+  input:
+    key_fields: [loan_id]
+rules:
+  - id: LOAN_ID_PRESENT
+    severity: error
+    binding: input
+    op: not_null
+    columns: [loan_id]
+```
+
+### `benchmark` Gold Assertions JSONL (`benchmark candidate.csv --assertions gold.jsonl --key id --json`)
+```json
+{"entity":"1","field":"region","expected":"East"}
+{"entity":"2","field":"amount","expected":"2000"}
+```
+
+### `assess` Policy YAML (`assess shape.json rvl.json verify.json --policy policy.yaml --json`)
+```yaml
+schema_version: 1
+policy_id: reconciliation.v1
+policy_version: 1
+requires: [shape, rvl, verify]
+rules:
+  - name: clean
+    when:
+      shape: { outcome: COMPATIBLE }
+      rvl: { outcome_in: [REAL_CHANGE, NO_REAL_CHANGE] }
+      verify: { outcome: PASS }
+    then:
+      decision_band: PROCEED
+```
+
+---
+
 ## Refusal Recovery Cheat Sheet
 
 | Refusal | Tool | Recovery |
